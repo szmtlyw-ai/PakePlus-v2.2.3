@@ -1,0 +1,1507 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>奇解与包络几何探索器</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/12.4.0/math.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #4a6fa5;
+        }
+        
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            color: #7f8c8d;
+            font-size: 1.1em;
+        }
+        
+        .main-content {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        
+        .left-panel {
+            flex: 1;
+            min-width: 350px;
+        }
+        
+        .right-panel {
+            flex: 2;
+            min-width: 800px;
+        }
+        
+        .control-section {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            margin-bottom: 20px;
+        }
+        
+        .control-section h2 {
+            color: #3498db;
+            font-size: 1.2em;
+            margin-bottom: 15px;
+            border-left: 4px solid #3498db;
+            padding-left: 10px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        
+        input[type="text"], input[type="number"], select {
+            width: 100%;
+            padding: 10px 12px;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 1em;
+        }
+        
+        .range-inputs, .coord-inputs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .range-inputs input, .coord-inputs input {
+            flex: 1;
+        }
+        
+        .checkbox-group {
+            margin-bottom: 15px;
+        }
+        
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        
+        .checkbox-item input {
+            margin-right: 8px;
+        }
+        
+        .slider-container {
+            margin-bottom: 20px;
+        }
+        
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+        }
+        
+        .slider-value {
+            font-weight: bold;
+            color: #e74c3c;
+        }
+        
+        input[type="range"] {
+            width: 100%;
+            height: 8px;
+            border-radius: 4px;
+            background: #ddd;
+            outline: none;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        button {
+            padding: 12px 20px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            flex: 1;
+        }
+        
+        button:hover {
+            background-color: #2980b9;
+        }
+        
+        button#animateBtn {
+            background-color: #2ecc71;
+        }
+        
+        button#animateBtn:hover {
+            background-color: #27ae60;
+        }
+        
+        button#clearBtn {
+            background-color: #e74c3c;
+        }
+        
+        button#clearBtn:hover {
+            background-color: #c0392b;
+        }
+        
+        .example-select {
+            width: 100%;
+            padding: 10px 12px;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 1em;
+        }
+        
+        .canvas-container {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            margin-bottom: 20px;
+        }
+        
+        #mainCanvas {
+            display: block;
+            background-color: #fff;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            cursor: crosshair;
+        }
+        
+        .info-panel {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+        
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .info-item {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            border-left: 4px solid #3498db;
+        }
+        
+        .info-item h3 {
+            margin-bottom: 5px;
+            font-size: 0.9em;
+            color: #7f8c8d;
+        }
+        
+        .info-item p {
+            font-size: 1.1em;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        
+        .interactive-info {
+            padding: 15px;
+            background-color: #fff3cd;
+            border-radius: 6px;
+            border: 1px solid #ffeaa7;
+            margin-bottom: 15px;
+        }
+        
+        .instructions {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #e8f4fc;
+            border-radius: 8px;
+            border-left: 4px solid #3498db;
+        }
+        
+        .instructions h3 {
+            margin-bottom: 10px;
+            color: #2c3e50;
+        }
+        
+        .instructions ul {
+            padding-left: 20px;
+        }
+        
+        .instructions li {
+            margin-bottom: 5px;
+        }
+        
+        footer {
+            text-align: center;
+            margin-top: 30px;
+            color: #95a5a6;
+            font-size: 0.9em;
+        }
+        
+        .status-display {
+            padding: 10px;
+            background-color: #fff3cd;
+            border-radius: 6px;
+            border: 1px solid #ffeaa7;
+            margin-bottom: 15px;
+        }
+        
+        .legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-top: 10px;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .legend-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 2px;
+        }
+        
+        .legend-text {
+            font-size: 0.85em;
+        }
+        
+        @media (max-width: 1200px) {
+            .main-content {
+                flex-direction: column;
+            }
+        }
+        
+        .equation-display {
+            font-family: 'Courier New', monospace;
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid #ddd;
+            margin-bottom: 15px;
+        }
+        
+        .highlight {
+            background-color: #fff3cd;
+            padding: 5px;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>奇解与包络几何探索器</h1>
+            <p class="subtitle">直观探索一阶隐式微分方程的奇解与包络概念 | 《常微分方程》§2.4 教学辅助工具</p>
+        </header>
+        
+        <div class="main-content">
+            <div class="left-panel">
+                <div class="control-section">
+                    <h2>1. 曲线族方程设置</h2>
+                    <label for="familyInput">曲线族方程 Φ(x, y, C) = 0：</label>
+                    <input type="text" id="familyInput" value="y - C*x - 1/C" placeholder="例如：y - C*x - 1/C">
+                    
+                    <label for="exampleSelect">预设示例：</label>
+                    <select id="exampleSelect" class="example-select">
+                        <option value="example1">示例1: y - C*x - 1/C (克莱罗方程)</option>
+                        <option value="example2">示例2: y - C*x - C^2 (克莱罗方程)</option>
+                        <option value="example3">示例3: (x-C)^2 + y^2 - 4*C^2</option>
+                        <option value="example4">示例4: y - (x-C)^2 (抛物线族)</option>
+                        <option value="example5">示例5: x*C^2 + y*C + 1 (二次曲线族)</option>
+                        <option value="example6">示例6: y - sin(C*x) (正弦曲线族)</option>
+                        <option value="example7">示例7: y^2 - (x-C)^2 - 1 (双曲线族)</option>
+                    </select>
+                    
+                    <label>参数C范围 [C_min, C_max]：</label>
+                    <div class="range-inputs">
+                        <input type="number" id="cmin" step="0.5" value="-3" placeholder="C_min">
+                        <input type="number" id="cmax" step="0.5" value="3" placeholder="C_max">
+                    </div>
+                    
+                    <div class="slider-container">
+                        <div class="slider-label">
+                            <span>曲线数量</span>
+                            <span id="curveCountValue" class="slider-value">20</span>
+                        </div>
+                        <input type="range" id="curveCountSlider" min="5" max="50" step="1" value="20">
+                    </div>
+                </div>
+                
+                <div class="control-section">
+                    <h2>2. 包络线设置</h2>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="autoEnvelope" checked>
+                        <label for="autoEnvelope">自动计算包络线 (使用C-判别式法)</label>
+                    </div>
+                    
+                    <label for="envelopeInput">手动输入包络方程 (可选)：</label>
+                    <input type="text" id="envelopeInput" placeholder="例如：y^2 = 4x 或 y = 2*sqrt(x)">
+                    
+                    <div class="button-group">
+                        <button id="calcEnvelopeBtn">计算包络</button>
+                        <button id="clearEnvelopeBtn">清除包络</button>
+                    </div>
+                </div>
+                
+                <div class="control-section">
+                    <h2>3. 绘图区域设置</h2>
+                    <label>X轴范围 [x_min, x_max]：</label>
+                    <div class="range-inputs">
+                        <input type="number" id="xmin" step="0.5" value="-5" placeholder="x_min">
+                        <input type="number" id="xmax" step="0.5" value="5" placeholder="x_max">
+                    </div>
+                    
+                    <label>Y轴范围 [y_min, y_max]：</label>
+                    <div class="range-inputs">
+                        <input type="number" id="ymin" step="0.5" value="-5" placeholder="y_min">
+                        <input type="number" id="ymax" step="0.5" value="5" placeholder="y_max">
+                    </div>
+                </div>
+                
+                <div class="control-section">
+                    <h2>4. 视图控制</h2>
+                    <div class="checkbox-group">
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="showFamily" checked>
+                            <label for="showFamily">显示曲线族</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="showEnvelope" checked>
+                            <label for="showEnvelope">显示包络线</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="showGrid" checked>
+                            <label for="showGrid">显示坐标网格</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="showTangents" checked>
+                            <label for="showTangents">显示相切关系</label>
+                        </div>
+                    </div>
+                    
+                    <div class="slider-container">
+                        <div class="slider-label">
+                            <span>曲线透明度</span>
+                            <span id="opacityValue" class="slider-value">0.7</span>
+                        </div>
+                        <input type="range" id="opacitySlider" min="0.1" max="1" step="0.1" value="0.7">
+                    </div>
+                    
+                    <div class="button-group">
+                        <button id="animateBtn">动画演示</button>
+                        <button id="resetViewBtn">重置视图</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="right-panel">
+                <div class="canvas-container">
+                    <canvas id="mainCanvas" width="800" height="600"></canvas>
+                </div>
+                
+                <div class="info-panel">
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <h3>当前曲线族</h3>
+                            <p id="currentFamily">Φ(x, y, C) = y - Cx - 1/C</p>
+                        </div>
+                        <div class="info-item">
+                            <h3>包络线方程</h3>
+                            <p id="currentEnvelope">y² = 4x</p>
+                        </div>
+                        <div class="info-item">
+                            <h3>鼠标位置 (x, y)</h3>
+                            <p id="mousePos">(0.00, 0.00)</p>
+                        </div>
+                        <div class="info-item">
+                            <h3>参数C范围</h3>
+                            <p id="cRange">[-3, 3]</p>
+                        </div>
+                    </div>
+                    
+                    <div class="interactive-info" id="interactiveInfo">
+                        <strong>交互信息：</strong> 将鼠标移动到画布上探索相切关系
+                    </div>
+                    
+                    <div class="status-display" id="statusDisplay">
+                        <strong>当前状态：</strong> 就绪
+                    </div>
+                    
+                    <div class="equation-display">
+                        <h3 style="margin-bottom: 10px; color: #2c3e50;">C-判别式法求包络：</h3>
+                        <p>1. 曲线族方程: Φ(x, y, C) = 0</p>
+                        <p>2. 对C求偏导: ∂Φ/∂C = 0</p>
+                        <p>3. 从两个方程中消去C，得到包络线方程</p>
+                    </div>
+                    
+                    <div class="legend">
+                        <div class="legend-item">
+                            <div class="legend-color" style="background-color: rgba(52, 152, 219, 0.7)"></div>
+                            <div class="legend-text">曲线族 (不同C值)</div>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background-color: #e74c3c"></div>
+                            <div class="legend-text">包络线 (奇解)</div>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background-color: #2ecc71"></div>
+                            <div class="legend-text">当前高亮曲线</div>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background-color: #f39c12"></div>
+                            <div class="legend-text">切线</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="instructions">
+                    <h3>使用说明</h3>
+                    <ul>
+                        <li><strong>探索曲线族</strong>：在左侧输入曲线族方程，设置参数C的范围和数量。</li>
+                        <li><strong>寻找包络</strong>：勾选"自动计算包络线"，工具将尝试用C-判别式法计算包络方程。</li>
+                        <li><strong>交互探索</strong>：将鼠标移动到画布上，查看当前点是否在包络线上，并观察相切关系。</li>
+                        <li><strong>动画演示</strong>：点击"动画演示"按钮，观察参数C变化时曲线族如何"扫过"区域形成包络。</li>
+                        <li><strong>教学重点</strong>：理解奇解作为曲线族的包络，掌握C-判别式法的几何意义。</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <footer>
+            <p>奇解与包络几何探索器 | 《常微分方程》教学辅助工具 | 基于 HTML5 Canvas 与 JavaScript 实现</p>
+        </footer>
+    </div>
+
+    <script>
+        // 主应用程序状态和配置
+        const AppState = {
+            // 曲线族和包络方程
+            familyExpr: null,
+            envelopeExpr: null,
+            envelopeFunc: null,
+            
+            // 参数范围
+            cMin: -3,
+            cMax: 3,
+            curveCount: 20,
+            
+            // 绘图区域
+            xMin: -5,
+            xMax: 5,
+            yMin: -5,
+            yMax: 5,
+            
+            // 视图变换
+            viewOffsetX: 0,
+            viewOffsetY: 0,
+            viewScale: 1,
+            
+            // 交互状态
+            isDragging: false,
+            lastMouseX: 0,
+            lastMouseY: 0,
+            mouseDownX: 0,
+            mouseDownY: 0,
+            dragThreshold: 5,
+            
+            // 动画状态
+            isAnimating: false,
+            animationId: null,
+            currentCValue: -3,
+            animationDirection: 1,
+            
+            // 当前鼠标信息
+            mouseX: 0,
+            mouseY: 0,
+            mouseLogicalX: 0,
+            mouseLogicalY: 0,
+            hoveredC: null,
+            hoveredPoint: null,
+            isOnEnvelope: false,
+            
+            // 显示控制
+            showFamily: true,
+            showEnvelope: true,
+            showGrid: true,
+            showTangents: true,
+            curveOpacity: 0.7,
+            
+            // 预设示例数据
+            examples: {
+                example1: {
+                    family: "y - C*x - 1/C",
+                    envelope: "y^2 = 4*x",
+                    cMin: -3,
+                    cMax: 3,
+                    xMin: -5,
+                    xMax: 5,
+                    yMin: -5,
+                    yMax: 5
+                },
+                example2: {
+                    family: "y - C*x - C^2",
+                    envelope: "x^2 + 4*y = 0",
+                    cMin: -3,
+                    cMax: 3,
+                    xMin: -5,
+                    xMax: 5,
+                    yMin: -5,
+                    yMax: 5
+                },
+                example3: {
+                    family: "(x-C)^2 + y^2 - 4*C^2",
+                    envelope: "y^2 = 3*x^2",
+                    cMin: -3,
+                    cMax: 3,
+                    xMin: -5,
+                    xMax: 5,
+                    yMin: -5,
+                    yMax: 5
+                },
+                example4: {
+                    family: "y - (x-C)^2",
+                    envelope: "y = 0",
+                    cMin: -3,
+                    cMax: 3,
+                    xMin: -5,
+                    xMax: 5,
+                    yMin: -5,
+                    yMax: 5
+                },
+                example5: {
+                    family: "x*C^2 + y*C + 1",
+                    envelope: "y^2 = 4*x",
+                    cMin: -3,
+                    cMax: 3,
+                    xMin: -5,
+                    xMax: 5,
+                    yMin: -5,
+                    yMax: 5
+                },
+                example6: {
+                    family: "y - sin(C*x)",
+                    envelope: "y = 1 或 y = -1",
+                    cMin: 0.5,
+                    cMax: 3,
+                    xMin: -5,
+                    xMax: 5,
+                    yMin: -2,
+                    yMax: 2
+                },
+                example7: {
+                    family: "y^2 - (x-C)^2 - 1",
+                    envelope: "y = x-C 和 y = -(x-C)",
+                    cMin: -3,
+                    cMax: 3,
+                    xMin: -5,
+                    xMax: 5,
+                    yMin: -5,
+                    yMax: 5
+                }
+            }
+        };
+
+        // DOM 元素引用
+        const canvas = document.getElementById('mainCanvas');
+        const ctx = canvas.getContext('2d');
+        const familyInput = document.getElementById('familyInput');
+        const exampleSelect = document.getElementById('exampleSelect');
+        const cminInput = document.getElementById('cmin');
+        const cmaxInput = document.getElementById('cmax');
+        const curveCountSlider = document.getElementById('curveCountSlider');
+        const curveCountValue = document.getElementById('curveCountValue');
+        const autoEnvelopeCheck = document.getElementById('autoEnvelope');
+        const envelopeInput = document.getElementById('envelopeInput');
+        const calcEnvelopeBtn = document.getElementById('calcEnvelopeBtn');
+        const clearEnvelopeBtn = document.getElementById('clearEnvelopeBtn');
+        const xminInput = document.getElementById('xmin');
+        const xmaxInput = document.getElementById('xmax');
+        const yminInput = document.getElementById('ymin');
+        const ymaxInput = document.getElementById('ymax');
+        const showFamilyCheck = document.getElementById('showFamily');
+        const showEnvelopeCheck = document.getElementById('showEnvelope');
+        const showGridCheck = document.getElementById('showGrid');
+        const showTangentsCheck = document.getElementById('showTangents');
+        const opacitySlider = document.getElementById('opacitySlider');
+        const opacityValue = document.getElementById('opacityValue');
+        const animateBtn = document.getElementById('animateBtn');
+        const resetViewBtn = document.getElementById('resetViewBtn');
+        const currentFamilySpan = document.getElementById('currentFamily');
+        const currentEnvelopeSpan = document.getElementById('currentEnvelope');
+        const mousePosSpan = document.getElementById('mousePos');
+        const cRangeSpan = document.getElementById('cRange');
+        const interactiveInfo = document.getElementById('interactiveInfo');
+        const statusDisplay = document.getElementById('statusDisplay');
+
+        // 颜色方案
+        const Colors = {
+            grid: '#e0e0e0',
+            axis: '#000',
+            family: 'rgba(52, 152, 219, 0.7)',
+            envelope: '#e74c3c',
+            highlight: '#2ecc71',
+            tangent: '#f39c12',
+            point: '#9b59b6'
+        };
+
+        // 核心函数：安全地解析和计算数学表达式
+        function createFunctionFromExpression(expr, vars) {
+            expr = expr.replace(/\^/g, '**');
+            try {
+                const compiled = math.compile(expr);
+                return function(...args) {
+                    try {
+                        const scope = {};
+                        vars.forEach((v, i) => {
+                            scope[v] = args[i];
+                        });
+                        return compiled.evaluate(scope);
+                    } catch (err) {
+                        return NaN;
+                    }
+                };
+            } catch (err) {
+                console.error("表达式解析失败:", err.message);
+                alert(`表达式解析错误：${err.message}。请检查数学表达式。`);
+                return () => NaN;
+            }
+        }
+
+        // 坐标转换函数
+        function logicalToCanvas(lx, ly) {
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const x = centerX + (lx - AppState.viewOffsetX) * 50 * AppState.viewScale;
+            const y = centerY - (ly - AppState.viewOffsetY) * 50 * AppState.viewScale;
+            return {x, y};
+        }
+        
+        function canvasToLogical(cx, cy) {
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const lx = (cx - centerX) / (50 * AppState.viewScale) + AppState.viewOffsetX;
+            const ly = (centerY - cy) / (50 * AppState.viewScale) + AppState.viewOffsetY;
+            return {x: lx, y: ly};
+        }
+
+        // 绘图函数
+        function drawGridAndAxes() {
+            if (!AppState.showGrid) return;
+            
+            ctx.save();
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            ctx.translate(centerX, centerY);
+            ctx.scale(1, -1);
+            ctx.scale(50 * AppState.viewScale, 50 * AppState.viewScale);
+            ctx.translate(-AppState.viewOffsetX, -AppState.viewOffsetY);
+            
+            const logicalWidth = canvas.width / (50 * AppState.viewScale);
+            const logicalHeight = canvas.height / (50 * AppState.viewScale);
+            const left = AppState.viewOffsetX - logicalWidth / 2;
+            const right = AppState.viewOffsetX + logicalWidth / 2;
+            const bottom = AppState.viewOffsetY - logicalHeight / 2;
+            const top = AppState.viewOffsetY + logicalHeight / 2;
+            
+            // 绘制网格
+            ctx.strokeStyle = Colors.grid;
+            ctx.lineWidth = 1 / (50 * AppState.viewScale);
+            ctx.beginPath();
+            
+            const xStart = Math.ceil(left);
+            const xEnd = Math.floor(right);
+            for (let x = xStart; x <= xEnd; x++) {
+                ctx.moveTo(x, bottom);
+                ctx.lineTo(x, top);
+            }
+            
+            const yStart = Math.ceil(bottom);
+            const yEnd = Math.floor(top);
+            for (let y = yStart; y <= yEnd; y++) {
+                ctx.moveTo(left, y);
+                ctx.lineTo(right, y);
+            }
+            ctx.stroke();
+            
+            // 绘制坐标轴
+            ctx.strokeStyle = Colors.axis;
+            ctx.lineWidth = 2 / (50 * AppState.viewScale);
+            ctx.beginPath();
+            ctx.moveTo(left, 0);
+            ctx.lineTo(right, 0);
+            ctx.moveTo(0, bottom);
+            ctx.lineTo(0, top);
+            ctx.stroke();
+            
+            ctx.restore();
+            
+            // 绘制坐标轴标签
+            drawAxisLabels();
+        }
+        
+        function drawAxisLabels() {
+            ctx.save();
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
+            
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const logicalWidth = canvas.width / (50 * AppState.viewScale);
+            const logicalHeight = canvas.height / (50 * AppState.viewScale);
+            
+            const left = AppState.viewOffsetX - logicalWidth / 2;
+            const right = AppState.viewOffsetX + logicalWidth / 2;
+            const bottom = AppState.viewOffsetY - logicalHeight / 2;
+            const top = AppState.viewOffsetY + logicalHeight / 2;
+            
+            ctx.font = '12px Arial';
+            ctx.fillStyle = Colors.axis;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'top';
+            
+            const xTickStart = Math.ceil(left);
+            const xTickEnd = Math.floor(right);
+            for (let x = xTickStart; x <= xTickEnd; x++) {
+                if (Math.abs(x) > 0.01) {
+                    const canvasPos = logicalToCanvas(x, 0);
+                    ctx.fillText(x.toString(), canvasPos.x, canvasPos.y + 5);
+                }
+            }
+            
+            ctx.textAlign = 'right';
+            ctx.textBaseline = 'middle';
+            const yTickStart = Math.ceil(bottom);
+            const yTickEnd = Math.floor(top);
+            for (let y = yTickStart; y <= yTickEnd; y++) {
+                if (Math.abs(y) > 0.01) {
+                    const canvasPos = logicalToCanvas(0, y);
+                    ctx.fillText(y.toString(), canvasPos.x - 5, canvasPos.y);
+                }
+            }
+            
+            ctx.textAlign = 'left';
+            ctx.textBaseline = 'top';
+            const originPos = logicalToCanvas(0, 0);
+            ctx.fillText('O', originPos.x + 5, originPos.y + 5);
+            
+            ctx.restore();
+        }
+        
+        // 求解方程 f(x, y, C) = 0 对于给定的x和C
+        function solveForY(x, C) {
+            if (!AppState.familyExpr) return [];
+            
+            const f = AppState.familyExpr;
+            const tolerance = 1e-6;
+            const maxIterations = 100;
+            
+            // 尝试用牛顿法求解
+            const newtonSolve = (y0) => {
+                let y = y0;
+                for (let i = 0; i < maxIterations; i++) {
+                    const fy = f(x, y, C);
+                    const h = 1e-6;
+                    const fyh = f(x, y + h, C);
+                    const derivative = (fyh - fy) / h;
+                    
+                    if (Math.abs(derivative) < 1e-10) break;
+                    
+                    const yNew = y - fy / derivative;
+                    
+                    if (Math.abs(yNew - y) < tolerance) {
+                        return yNew;
+                    }
+                    
+                    y = yNew;
+                }
+                return NaN;
+            };
+            
+            // 在y范围内尝试多个初始值
+            const yStep = (AppState.yMax - AppState.yMin) / 20;
+            const solutions = new Set();
+            
+            for (let y0 = AppState.yMin; y0 <= AppState.yMax; y0 += yStep) {
+                const y = newtonSolve(y0);
+                if (!isNaN(y) && y >= AppState.yMin && y <= AppState.yMax) {
+                    // 检查是否接近已有解
+                    let isNew = true;
+                    for (const sol of solutions) {
+                        if (Math.abs(sol - y) < tolerance) {
+                            isNew = false;
+                            break;
+                        }
+                    }
+                    if (isNew) {
+                        solutions.add(y);
+                    }
+                }
+            }
+            
+            return Array.from(solutions).sort((a, b) => a - b);
+        }
+        
+        function drawFamilyCurves() {
+            if (!AppState.showFamily || !AppState.familyExpr) return;
+            
+            ctx.save();
+            ctx.globalAlpha = AppState.curveOpacity;
+            
+            const cStep = (AppState.cMax - AppState.cMin) / (AppState.curveCount - 1);
+            
+            for (let i = 0; i < AppState.curveCount; i++) {
+                const C = AppState.cMin + i * cStep;
+                
+                // 跳过C=0的情况，避免除以零
+                if (Math.abs(C) < 1e-10) continue;
+                
+                const points = [];
+                const xStep = (AppState.xMax - AppState.xMin) / 200;
+                
+                for (let x = AppState.xMin; x <= AppState.xMax; x += xStep) {
+                    const yValues = solveForY(x, C);
+                    
+                    for (const y of yValues) {
+                        if (!isNaN(y) && y >= AppState.yMin && y <= AppState.yMax) {
+                            points.push({x, y});
+                        }
+                    }
+                }
+                
+                if (points.length > 1) {
+                    // 绘制曲线
+                    ctx.strokeStyle = Colors.family;
+                    ctx.lineWidth = 1.5;
+                    ctx.beginPath();
+                    
+                    const firstPoint = logicalToCanvas(points[0].x, points[0].y);
+                    ctx.moveTo(firstPoint.x, firstPoint.y);
+                    
+                    for (let j = 1; j < points.length; j++) {
+                        const point = logicalToCanvas(points[j].x, points[j].y);
+                        ctx.lineTo(point.x, point.y);
+                    }
+                    
+                    ctx.stroke();
+                }
+            }
+            
+            ctx.restore();
+        }
+        
+        function drawEnvelope() {
+            if (!AppState.showEnvelope || !AppState.envelopeFunc) return;
+            
+            ctx.save();
+            ctx.strokeStyle = Colors.envelope;
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            
+            // 对于显式方程 y = f(x)
+            if (typeof AppState.envelopeFunc === 'function' && AppState.envelopeFunc.length === 1) {
+                const xStep = (AppState.xMax - AppState.xMin) / 400;
+                let firstPoint = true;
+                
+                for (let x = AppState.xMin; x <= AppState.xMax; x += xStep) {
+                    try {
+                        const y = AppState.envelopeFunc(x);
+                        if (!isNaN(y) && y >= AppState.yMin && y <= AppState.yMax) {
+                            const point = logicalToCanvas(x, y);
+                            if (firstPoint) {
+                                ctx.moveTo(point.x, point.y);
+                                firstPoint = false;
+                            } else {
+                                ctx.lineTo(point.x, point.y);
+                            }
+                        } else {
+                            firstPoint = true;
+                        }
+                    } catch (err) {
+                        firstPoint = true;
+                    }
+                }
+            }
+            
+            ctx.stroke();
+            ctx.restore();
+        }
+        
+        function drawTangents() {
+            if (!AppState.showTangents || !AppState.hoveredPoint || !AppState.hoveredC) return;
+            
+            const {x, y, C} = AppState.hoveredPoint;
+            
+            // 绘制切点
+            ctx.save();
+            const point = logicalToCanvas(x, y);
+            ctx.fillStyle = Colors.point;
+            ctx.beginPath();
+            ctx.arc(point.x, point.y, 5, 0, 2 * Math.PI);
+            ctx.fill();
+            ctx.restore();
+            
+            // 计算曲线在切点的斜率
+            // 使用数值方法计算偏导数
+            const h = 1e-6;
+            const f = AppState.familyExpr;
+            
+            // 计算 ∂Φ/∂x 和 ∂Φ/∂y
+            const phi_x = (f(x + h, y, C) - f(x - h, y, C)) / (2 * h);
+            const phi_y = (f(x, y + h, C) - f(x, y - h, C)) / (2 * h);
+            
+            // 斜率 = -∂Φ/∂x / ∂Φ/∂y
+            let slope = -phi_x / phi_y;
+            
+            if (Math.abs(phi_y) < 1e-10) {
+                // 垂直线
+                slope = Infinity;
+            }
+            
+            // 绘制切线线段
+            const length = 1.0; // 逻辑长度
+            ctx.save();
+            ctx.strokeStyle = Colors.tangent;
+            ctx.lineWidth = 2;
+            ctx.setLineDash([5, 5]);
+            ctx.beginPath();
+            
+            if (Math.abs(slope) < 1000) { // 不是近似垂直
+                const dx = length / Math.sqrt(1 + slope * slope);
+                const dy = slope * dx;
+                
+                const start = logicalToCanvas(x - dx, y - dy);
+                const end = logicalToCanvas(x + dx, y + dy);
+                
+                ctx.moveTo(start.x, start.y);
+                ctx.lineTo(end.x, end.y);
+            } else { // 垂直线
+                const start = logicalToCanvas(x, y - length);
+                const end = logicalToCanvas(x, y + length);
+                
+                ctx.moveTo(start.x, start.y);
+                ctx.lineTo(end.x, end.y);
+            }
+            
+            ctx.stroke();
+            ctx.restore();
+        }
+        
+        function drawHighlightedCurve() {
+            if (!AppState.hoveredC || !AppState.familyExpr) return;
+            
+            ctx.save();
+            ctx.strokeStyle = Colors.highlight;
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            
+            const C = AppState.hoveredC;
+            const points = [];
+            const xStep = (AppState.xMax - AppState.xMin) / 200;
+            
+            for (let x = AppState.xMin; x <= AppState.xMax; x += xStep) {
+                const yValues = solveForY(x, C);
+                
+                for (const y of yValues) {
+                    if (!isNaN(y) && y >= AppState.yMin && y <= AppState.yMax) {
+                        points.push({x, y});
+                    }
+                }
+            }
+            
+            if (points.length > 1) {
+                const firstPoint = logicalToCanvas(points[0].x, points[0].y);
+                ctx.moveTo(firstPoint.x, firstPoint.y);
+                
+                for (let j = 1; j < points.length; j++) {
+                    const point = logicalToCanvas(points[j].x, points[j].y);
+                    ctx.lineTo(point.x, point.y);
+                }
+                
+                ctx.stroke();
+            }
+            
+            ctx.restore();
+        }
+        
+        function redrawAll() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawGridAndAxes();
+            drawFamilyCurves();
+            drawEnvelope();
+            drawHighlightedCurve();
+            drawTangents();
+        }
+        
+        // 自动计算包络线
+        function calculateEnvelope() {
+            if (!AppState.familyExpr || !autoEnvelopeCheck.checked) return;
+            
+            const familyStr = familyInput.value.trim();
+            
+            // 尝试解析包络线
+            // 注意：这里我们只处理预设示例的包络线
+            // 对于一般方程，需要符号计算，这里简化处理
+            
+            let envelopeEquation = "";
+            
+            // 检查是否为预设示例
+            for (const [key, example] of Object.entries(AppState.examples)) {
+                if (example.family === familyStr) {
+                    envelopeEquation = example.envelope;
+                    break;
+                }
+            }
+            
+            // 如果没有找到预设，尝试用数值方法
+            if (!envelopeEquation) {
+                // 简化：显示提示信息
+                envelopeEquation = "需要手动输入包络方程";
+                interactiveInfo.innerHTML = `<strong>提示：</strong> 无法自动计算此方程的包络线，请手动输入包络方程。`;
+            }
+            
+            // 设置包络方程
+            envelopeInput.value = envelopeEquation;
+            updateEnvelope();
+        }
+        
+        function updateEnvelope() {
+            const expr = envelopeInput.value.trim();
+            if (!expr) {
+                AppState.envelopeFunc = null;
+                currentEnvelopeSpan.textContent = "未设置";
+                return;
+            }
+            
+            try {
+                // 尝试解析为显式方程 y = f(x)
+                if (expr.includes('y=') || expr.includes('y =')) {
+                    const yExpr = expr.split('=')[1].trim();
+                    AppState.envelopeFunc = createFunctionFromExpression(yExpr, ['x']);
+                } 
+                // 尝试解析为隐式方程 F(x, y) = 0
+                else if (expr.includes('y^2') || expr.includes('x^2')) {
+                    // 简化处理：对于常见形式，直接硬编码
+                    if (expr === 'y^2 = 4*x' || expr === 'y^2=4*x') {
+                        AppState.envelopeFunc = (x) => {
+                            if (x < 0) return NaN;
+                            return 2 * Math.sqrt(x);
+                        };
+                    } else if (expr === 'x^2 + 4*y = 0' || expr === 'x^2+4*y=0') {
+                        AppState.envelopeFunc = (x) => -x*x/4;
+                    } else if (expr === 'y^2 = 3*x^2' || expr === 'y^2=3*x^2') {
+                        AppState.envelopeFunc = (x) => Math.sqrt(3) * Math.abs(x);
+                    } else if (expr === 'y = 0' || expr === 'y=0') {
+                        AppState.envelopeFunc = () => 0;
+                    } else {
+                        AppState.envelopeFunc = null;
+                    }
+                } else {
+                    AppState.envelopeFunc = null;
+                }
+                
+                currentEnvelopeSpan.textContent = expr;
+                redrawAll();
+            } catch (err) {
+                alert("包络方程解析错误：" + err.message);
+                AppState.envelopeFunc = null;
+            }
+        }
+        
+        // 查找鼠标位置对应的C值
+        function findCForPoint(x, y) {
+            if (!AppState.familyExpr) return null;
+            
+            const f = AppState.familyExpr;
+            const cStep = (AppState.cMax - AppState.cMin) / 1000;
+            let bestC = null;
+            let minError = Infinity;
+            
+            // 在C范围内搜索，找到使Φ(x, y, C)最小的C
+            for (let C = AppState.cMin; C <= AppState.cMax; C += cStep) {
+                const error = Math.abs(f(x, y, C));
+                if (error < minError) {
+                    minError = error;
+                    bestC = C;
+                }
+            }
+            
+            // 如果误差很小，认为找到了C
+            if (minError < 0.1) {
+                return bestC;
+            }
+            
+            return null;
+        }
+        
+        // 检查点是否在包络线上
+        function checkPointOnEnvelope(x, y) {
+            if (!AppState.envelopeFunc) return false;
+            
+            try {
+                // 对于显式包络 y = f(x)
+                if (typeof AppState.envelopeFunc === 'function' && AppState.envelopeFunc.length === 1) {
+                    const envelopeY = AppState.envelopeFunc(x);
+                    return !isNaN(envelopeY) && Math.abs(envelopeY - y) < 0.05;
+                }
+            } catch (err) {
+                return false;
+            }
+            
+            return false;
+        }
+        
+        function updateFamily() {
+            const expr = familyInput.value.trim();
+            try {
+                AppState.familyExpr = createFunctionFromExpression(expr, ['x', 'y', 'C']);
+                currentFamilySpan.textContent = `Φ(x, y, C) = ${expr}`;
+                redrawAll();
+            } catch (err) {
+                alert("曲线族方程解析错误：" + err.message);
+            }
+        }
+        
+        function updateCRange() {
+            AppState.cMin = parseFloat(cminInput.value);
+            AppState.cMax = parseFloat(cmaxInput.value);
+            cRangeSpan.textContent = `[${AppState.cMin.toFixed(1)}, ${AppState.cMax.toFixed(1)}]`;
+            redrawAll();
+        }
+        
+        function updatePlotRange() {
+            AppState.xMin = parseFloat(xminInput.value);
+            AppState.xMax = parseFloat(xmaxInput.value);
+            AppState.yMin = parseFloat(yminInput.value);
+            AppState.yMax = parseFloat(ymaxInput.value);
+            redrawAll();
+        }
+        
+        function startAnimation() {
+            if (AppState.isAnimating) return;
+            
+            AppState.isAnimating = true;
+            AppState.currentCValue = AppState.cMin;
+            AppState.animationDirection = 1;
+            animateBtn.disabled = true;
+            animateBtn.textContent = "停止动画";
+            
+            function animationStep() {
+                if (!AppState.isAnimating) return;
+                
+                // 更新C值
+                AppState.currentCValue += 0.1 * AppState.animationDirection;
+                
+                if (AppState.currentCValue > AppState.cMax) {
+                    AppState.currentCValue = AppState.cMax;
+                    AppState.animationDirection = -1;
+                } else if (AppState.currentCValue < AppState.cMin) {
+                    AppState.currentCValue = AppState.cMin;
+                    AppState.animationDirection = 1;
+                }
+                
+                // 高亮显示当前C值对应的曲线
+                AppState.hoveredC = AppState.currentCValue;
+                
+                // 更新显示
+                interactiveInfo.innerHTML = `<strong>动画中：</strong> C = ${AppState.currentCValue.toFixed(2)}`;
+                redrawAll();
+                
+                // 继续动画
+                requestAnimationFrame(animationStep);
+            }
+            
+            animationStep();
+        }
+        
+        function stopAnimation() {
+            AppState.isAnimating = false;
+            animateBtn.disabled = false;
+            animateBtn.textContent = "动画演示";
+        }
+        
+        function resetView() {
+            AppState.viewOffsetX = 0;
+            AppState.viewOffsetY = 0;
+            AppState.viewScale = 1;
+            redrawAll();
+        }
+
+        // 事件监听
+        familyInput.addEventListener('change', () => {
+            updateFamily();
+            if (autoEnvelopeCheck.checked) {
+                calculateEnvelope();
+            }
+        });
+        
+        exampleSelect.addEventListener('change', () => {
+            const example = AppState.examples[exampleSelect.value];
+            if (example) {
+                familyInput.value = example.family;
+                cminInput.value = example.cMin;
+                cmaxInput.value = example.cMax;
+                xminInput.value = example.xMin;
+                xmaxInput.value = example.xMax;
+                yminInput.value = example.yMin;
+                ymaxInput.value = example.yMax;
+                
+                updateFamily();
+                updateCRange();
+                updatePlotRange();
+                
+                if (autoEnvelopeCheck.checked) {
+                    envelopeInput.value = example.envelope;
+                    updateEnvelope();
+                }
+            }
+        });
+        
+        cminInput.addEventListener('change', updateCRange);
+        cmaxInput.addEventListener('change', updateCRange);
+        
+        curveCountSlider.addEventListener('input', () => {
+            AppState.curveCount = parseInt(curveCountSlider.value);
+            curveCountValue.textContent = AppState.curveCount;
+            redrawAll();
+        });
+        
+        autoEnvelopeCheck.addEventListener('change', () => {
+            if (autoEnvelopeCheck.checked) {
+                calculateEnvelope();
+            }
+        });
+        
+        calcEnvelopeBtn.addEventListener('click', () => {
+            if (autoEnvelopeCheck.checked) {
+                calculateEnvelope();
+            } else {
+                updateEnvelope();
+            }
+        });
+        
+        clearEnvelopeBtn.addEventListener('click', () => {
+            envelopeInput.value = '';
+            AppState.envelopeFunc = null;
+            currentEnvelopeSpan.textContent = "未设置";
+            redrawAll();
+        });
+        
+        xminInput.addEventListener('change', updatePlotRange);
+        xmaxInput.addEventListener('change', updatePlotRange);
+        yminInput.addEventListener('change', updatePlotRange);
+        ymaxInput.addEventListener('change', updatePlotRange);
+        
+        showFamilyCheck.addEventListener('change', () => {
+            AppState.showFamily = showFamilyCheck.checked;
+            redrawAll();
+        });
+        
+        showEnvelopeCheck.addEventListener('change', () => {
+            AppState.showEnvelope = showEnvelopeCheck.checked;
+            redrawAll();
+        });
+        
+        showGridCheck.addEventListener('change', () => {
+            AppState.showGrid = showGridCheck.checked;
+            redrawAll();
+        });
+        
+        showTangentsCheck.addEventListener('change', () => {
+            AppState.showTangents = showTangentsCheck.checked;
+            redrawAll();
+        });
+        
+        opacitySlider.addEventListener('input', () => {
+            AppState.curveOpacity = parseFloat(opacitySlider.value);
+            opacityValue.textContent = AppState.curveOpacity.toFixed(1);
+            redrawAll();
+        });
+        
+        animateBtn.addEventListener('click', () => {
+            if (AppState.isAnimating) {
+                stopAnimation();
+            } else {
+                startAnimation();
+            }
+        });
+        
+        resetViewBtn.addEventListener('click', resetView);
+        
+        // 鼠标事件
+        canvas.addEventListener('mousedown', (e) => {
+            AppState.isDragging = false;
+            AppState.lastMouseX = e.clientX;
+            AppState.lastMouseY = e.clientY;
+            AppState.mouseDownX = e.clientX;
+            AppState.mouseDownY = e.clientY;
+            canvas.style.cursor = 'grabbing';
+        });
+        
+        canvas.addEventListener('mousemove', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+            const logicalPos = canvasToLogical(mouseX, mouseY);
+            
+            // 更新鼠标位置显示
+            AppState.mouseX = mouseX;
+            AppState.mouseY = mouseY;
+            AppState.mouseLogicalX = logicalPos.x;
+            AppState.mouseLogicalY = logicalPos.y;
+            
+            mousePosSpan.textContent = `(${logicalPos.x.toFixed(2)}, ${logicalPos.y.toFixed(2)})`;
+            
+            // 检查是否在拖拽
+            if (AppState.mouseDownX !== 0 && AppState.mouseDownY !== 0) {
+                const deltaX = Math.abs(e.clientX - AppState.mouseDownX);
+                const deltaY = Math.abs(e.clientY - AppState.mouseDownY);
+                const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+                
+                if (distance > AppState.dragThreshold) {
+                    AppState.isDragging = true;
+                }
+            }
+            
+            if (AppState.isDragging) {
+                const deltaX = e.clientX - AppState.lastMouseX;
+                const deltaY = e.clientY - AppState.lastMouseY;
+                AppState.viewOffsetX -= deltaX / (50 * AppState.viewScale);
+                AppState.viewOffsetY += deltaY / (50 * AppState.viewScale);
+                AppState.lastMouseX = e.clientX;
+                AppState.lastMouseY = e.clientY;
+                redrawAll();
+            } else {
+                // 交互探索：查找当前点对应的C值
+                const C = findCForPoint(logicalPos.x, logicalPos.y);
+                AppState.hoveredC = C;
+                
+                // 检查是否在包络线上
+                AppState.isOnEnvelope = checkPointOnEnvelope(logicalPos.x, logicalPos.y);
+                
+                if (C !== null) {
+                    // 计算Φ的值
+                    const phiValue = AppState.familyExpr ? 
+                        AppState.familyExpr(logicalPos.x, logicalPos.y, C) : NaN;
+                    
+                    // 计算∂Φ/∂C
+                    let dPhi_dC = NaN;
+                    if (AppState.familyExpr) {
+                        const h = 1e-6;
+                        dPhi_dC = (AppState.familyExpr(logicalPos.x, logicalPos.y, C + h) - 
+                                 AppState.familyExpr(logicalPos.x, logicalPos.y, C - h)) / (2 * h);
+                    }
+                    
+                    // 更新交互信息
+                    let info = `<strong>当前位置：</strong> (${logicalPos.x.toFixed(2)}, ${logicalPos.y.toFixed(2)})<br>`;
+                    info += `<strong>参数C：</strong> ${C.toFixed(4)}<br>`;
+                    info += `<strong>Φ(x, y, C)：</strong> ${phiValue.toFixed(6)}<br>`;
+                    info += `<strong>∂Φ/∂C：</strong> ${dPhi_dC.toFixed(6)}`;
+                    
+                    if (AppState.isOnEnvelope) {
+                        info += `<br><strong style="color:#e74c3c">✓ 在包络线上</strong>`;
+                        AppState.hoveredPoint = {x: logicalPos.x, y: logicalPos.y, C};
+                    } else {
+                        AppState.hoveredPoint = null;
+                    }
+                    
+                    interactiveInfo.innerHTML = info;
+                } else {
+                    interactiveInfo.innerHTML = `<strong>当前位置：</strong> (${logicalPos.x.toFixed(2)}, ${logicalPos.y.toFixed(2)})<br>未找到对应的C值`;
+                    AppState.hoveredPoint = null;
+                }
+                
+                redrawAll();
+            }
+        });
+        
+        canvas.addEventListener('mouseup', () => {
+            AppState.isDragging = false;
+            AppState.mouseDownX = 0;
+            AppState.mouseDownY = 0;
+            canvas.style.cursor = 'crosshair';
+        });
+        
+        canvas.addEventListener('mouseleave', () => {
+            AppState.isDragging = false;
+            AppState.mouseDownX = 0;
+            AppState.mouseDownY = 0;
+            canvas.style.cursor = 'crosshair';
+            AppState.hoveredC = null;
+            AppState.hoveredPoint = null;
+            interactiveInfo.innerHTML = `<strong>交互信息：</strong> 将鼠标移动到画布上探索相切关系`;
+            redrawAll();
+        });
+        
+        canvas.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+            const logicalPosBefore = canvasToLogical(mouseX, mouseY);
+            const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
+            AppState.viewScale *= zoomFactor;
+            const logicalPosAfter = canvasToLogical(mouseX, mouseY);
+            AppState.viewOffsetX += logicalPosBefore.x - logicalPosAfter.x;
+            AppState.viewOffsetY += logicalPosBefore.y - logicalPosAfter.y;
+            redrawAll();
+        });
+
+        // 初始化
+        function init() {
+            // 设置初始值
+            curveCountValue.textContent = curveCountSlider.value;
+            opacityValue.textContent = opacitySlider.value;
+            
+            // 设置初始方程
+            updateFamily();
+            
+            // 计算初始包络
+            calculateEnvelope();
+            
+            // 设置初始显示
+            updateCRange();
+            updatePlotRange();
+            
+            statusDisplay.innerHTML = `<strong>当前状态：</strong> 就绪`;
+        }
+        
+        // 启动应用
+        window.onload = init;
+    </script>
+</body>
+</html>
