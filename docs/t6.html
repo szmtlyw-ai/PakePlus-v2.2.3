@@ -1,0 +1,1484 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>解对初值的连续依赖性实验台</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/12.4.0/math.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #4a6fa5;
+        }
+        
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            color: #7f8c8d;
+            font-size: 1.1em;
+        }
+        
+        .main-content {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        
+        .left-panel {
+            flex: 1;
+            min-width: 350px;
+        }
+        
+        .right-panel {
+            flex: 3;
+            min-width: 1000px;
+        }
+        
+        .control-section {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            margin-bottom: 20px;
+        }
+        
+        .control-section h2 {
+            color: #3498db;
+            font-size: 1.2em;
+            margin-bottom: 15px;
+            border-left: 4px solid #3498db;
+            padding-left: 10px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        
+        input[type="text"], input[type="number"], select {
+            width: 100%;
+            padding: 10px 12px;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 1em;
+        }
+        
+        .range-inputs, .coord-inputs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .range-inputs input, .coord-inputs input {
+            flex: 1;
+        }
+        
+        .checkbox-group {
+            margin-bottom: 15px;
+        }
+        
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        
+        .checkbox-item input {
+            margin-right: 8px;
+        }
+        
+        .slider-container {
+            margin-bottom: 20px;
+        }
+        
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+        }
+        
+        .slider-value {
+            font-weight: bold;
+            color: #3498db;
+        }
+        
+        input[type="range"] {
+            width: 100%;
+            height: 8px;
+            border-radius: 4px;
+            background: #ddd;
+            outline: none;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        button {
+            padding: 12px 20px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            flex: 1;
+        }
+        
+        button:hover {
+            background-color: #2980b9;
+        }
+        
+        button#resetPerturbationBtn {
+            background-color: #e74c3c;
+        }
+        
+        button#resetPerturbationBtn:hover {
+            background-color: #c0392b;
+        }
+        
+        button#swapInitialBtn {
+            background-color: #2ecc71;
+        }
+        
+        button#swapInitialBtn:hover {
+            background-color: #27ae60;
+        }
+        
+        .canvas-container {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            margin-bottom: 20px;
+        }
+        
+        #mainCanvas {
+            display: block;
+            background-color: #fff;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            cursor: crosshair;
+        }
+        
+        .info-panel {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+        
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .info-item {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            border-left: 4px solid #3498db;
+        }
+        
+        .info-item h3 {
+            margin-bottom: 5px;
+            font-size: 0.9em;
+            color: #7f8c8d;
+        }
+        
+        .info-item p {
+            font-size: 1.1em;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        
+        .error-info {
+            background-color: #e8f4fc;
+            padding: 15px;
+            border-radius: 6px;
+            border-left: 4px solid #3498db;
+            margin-bottom: 15px;
+        }
+        
+        .error-info h3 {
+            margin-bottom: 10px;
+            color: #2c3e50;
+        }
+        
+        .error-item {
+            margin-bottom: 8px;
+        }
+        
+        .instructions {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #e8f4fc;
+            border-radius: 8px;
+            border-left: 4px solid #3498db;
+        }
+        
+        .instructions h3 {
+            margin-bottom: 10px;
+            color: #2c3e50;
+        }
+        
+        .instructions ul {
+            padding-left: 20px;
+        }
+        
+        .instructions li {
+            margin-bottom: 5px;
+        }
+        
+        footer {
+            text-align: center;
+            margin-top: 30px;
+            color: #95a5a6;
+            font-size: 0.9em;
+        }
+        
+        .status-display {
+            padding: 10px;
+            background-color: #fff3cd;
+            border-radius: 6px;
+            border: 1px solid #ffeaa7;
+            margin-bottom: 15px;
+        }
+        
+        .legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-top: 10px;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .legend-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 2px;
+        }
+        
+        .legend-text {
+            font-size: 0.85em;
+        }
+        
+        @media (max-width: 1200px) {
+            .main-content {
+                flex-direction: column;
+            }
+        }
+        
+        .equation-display {
+            font-family: 'Courier New', monospace;
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid #ddd;
+            margin-bottom: 15px;
+        }
+        
+        .continuity-indicator {
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-weight: bold;
+            background-color: #2ecc71;
+            color: white;
+        }
+        
+        .perturbation-visual {
+            margin-top: 15px;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-radius: 6px;
+            border: 1px solid #ddd;
+        }
+        
+        .perturbation-visual h4 {
+            margin-bottom: 8px;
+            color: #2c3e50;
+        }
+        
+        .perturbation-bar {
+            height: 20px;
+            background-color: #ecf0f1;
+            border-radius: 10px;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .perturbation-fill {
+            height: 100%;
+            background-color: #3498db;
+            border-radius: 10px;
+            transition: width 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>解对初值的连续依赖性实验台</h1>
+            <p class="subtitle">直观演示微分方程的解对初值的连续依赖性 | 《常微分方程》第二章§2.5教学辅助工具</p>
+        </header>
+        
+        <div class="main-content">
+            <div class="left-panel">
+                <div class="control-section">
+                    <h2>1. 微分方程设置</h2>
+                    <label>微分方程：dy/dx = f(x, y)</label>
+                    <input type="text" id="equationInput" value="y" placeholder="例如：y, -y, x+y, sin(x*y)">
+                    
+                    <label>预设示例：</label>
+                    <select id="exampleSelect" class="example-select">
+                        <option value="example1">示例1: y (线性增长)</option>
+                        <option value="example2">示例2: -y (指数衰减)</option>
+                        <option value="example3">示例3: x + y (线性)</option>
+                        <option value="example4">示例4: sin(x*y) (非线性)</option>
+                        <option value="example5">示例5: 0.5*y (稳定增长)</option>
+                        <option value="example6">示例6: cos(x) (与y无关)</option>
+                    </select>
+                </div>
+                
+                <div class="control-section">
+                    <h2>2. 初值设置</h2>
+                    <label>基准初值 (x₀, y₀)：</label>
+                    <div class="coord-inputs">
+                        <input type="number" id="x0" step="0.1" value="0" placeholder="x₀">
+                        <input type="number" id="y0" step="0.1" value="1" placeholder="y₀">
+                    </div>
+                    
+                    <label>扰动初值 (Δx, Δy)：</label>
+                    <div class="coord-inputs">
+                        <input type="number" id="dx" step="0.01" value="0" placeholder="Δx">
+                        <input type="number" id="dy" step="0.01" value="0.1" placeholder="Δy">
+                    </div>
+                    
+                    <div class="slider-container">
+                        <div class="slider-label">
+                            <span>扰动大小</span>
+                            <span id="perturbationValue" class="slider-value">0.10</span>
+                        </div>
+                        <input type="range" id="perturbationSlider" min="0" max="0.5" step="0.01" value="0.1">
+                    </div>
+                    
+                    <div class="button-group">
+                        <button id="resetPerturbationBtn">重置扰动</button>
+                        <button id="swapInitialBtn">交换初值</button>
+                    </div>
+                    
+                    <div class="perturbation-visual">
+                        <h4>扰动大小可视化</h4>
+                        <div class="perturbation-bar">
+                            <div class="perturbation-fill" id="perturbationFill" style="width: 20%"></div>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-top: 5px; font-size: 0.8em; color: #7f8c8d;">
+                            <span>小扰动</span>
+                            <span>大扰动</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="control-section">
+                    <h2>3. 绘图与积分设置</h2>
+                    <label>绘图范围 [x_min, x_max]：</label>
+                    <div class="range-inputs">
+                        <input type="number" id="xmin" step="0.5" value="-2" placeholder="x_min">
+                        <input type="number" id="xmax" step="0.5" value="2" placeholder="x_max">
+                    </div>
+                    
+                    <label>积分区间 [x₀, x_end]：</label>
+                    <div class="range-inputs">
+                        <input type="number" id="xstart" step="0.1" value="0" placeholder="x₀" disabled>
+                        <input type="number" id="xend" step="0.1" value="2" placeholder="x_end">
+                    </div>
+                    
+                    <div class="slider-container">
+                        <div class="slider-label">
+                            <span>积分步长 h</span>
+                            <span id="stepValue" class="slider-value">0.05</span>
+                        </div>
+                        <input type="range" id="stepSlider" min="0.01" max="0.1" step="0.01" value="0.05">
+                    </div>
+                    
+                    <div class="checkbox-group">
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="showErrorBand" checked>
+                            <label for="showErrorBand">显示误差带</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="showErrorCurve">
+                            <label for="showErrorCurve">显示误差曲线</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="showConnection" checked>
+                            <label for="showConnection">显示初值点连线</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="showGrid" checked>
+                            <label for="showGrid">显示网格</label>
+                        </div>
+                    </div>
+                    
+                    <div class="checkbox-item" style="margin-top: 15px;">
+                        <input type="checkbox" id="autoUpdate" checked>
+                        <label for="autoUpdate">拖拽时实时更新</label>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="right-panel">
+                <div class="canvas-container">
+                    <canvas id="mainCanvas" width="1000" height="600"></canvas>
+                </div>
+                
+                <div class="info-panel">
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <h3>基准初值</h3>
+                            <p id="baseInitialValue">(0.00, 1.00)</p>
+                        </div>
+                        <div class="info-item">
+                            <h3>扰动初值</h3>
+                            <p id="perturbedInitialValue">(0.00, 1.10)</p>
+                        </div>
+                        <div class="info-item">
+                            <h3>扰动大小</h3>
+                            <p id="perturbationSize">(0.00, 0.10) 模: 0.10</p>
+                        </div>
+                        <div class="info-item">
+                            <h3>连续依赖性</h3>
+                            <p id="continuityAssessment"><span class="continuity-indicator">满足连续依赖性</span></p>
+                        </div>
+                    </div>
+                    
+                    <div class="error-info">
+                        <h3>误差分析（用于验证连续依赖性）</h3>
+                        <div class="error-item"><strong>在 x_end 处的绝对误差:</strong> <span id="errorAtXend">0.00</span></div>
+                        <div class="error-item"><strong>最大绝对误差 (在积分区间上):</strong> <span id="maxError">0.00</span></div>
+                        <div class="error-item"><strong>相对误差 (在 x_end 处):</strong> <span id="relativeError">0.00</span></div>
+                        <div class="error-item"><strong>误差增长因子:</strong> <span id="errorGrowth">0.00</span> (越小越好)</div>
+                    </div>
+                    
+                    <div class="status-display" id="statusDisplay">
+                        <strong>当前状态：</strong> 拖拽红色扰动点改变扰动初值，观察两条积分曲线的接近程度
+                    </div>
+                    
+                    <div class="legend">
+                        <div class="legend-item">
+                            <div class="legend-color" style="background-color: #3498db"></div>
+                            <div class="legend-text">基准解曲线</div>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background-color: #e74c3c"></div>
+                            <div class="legend-text">扰动解曲线</div>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background-color: #f1c40f"></div>
+                            <div class="legend-text">误差带（两条曲线之间的区域）</div>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background-color: #2ecc71"></div>
+                            <div class="legend-text">误差曲线</div>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background-color: #9b59b6"></div>
+                            <div class="legend-text">初值点连线</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="instructions">
+                    <h3>使用说明与教学重点</h3>
+                    <ul>
+                        <li><strong>连续依赖性定义</strong>：当初值发生微小变化时，解的变化也很微小。数学表述：对于任意ε>0，存在δ>0，当‖初值扰动‖&lt;δ时，‖解曲线之差‖&lt;ε。</li>
+                        <li><strong>交互操作</strong>：拖拽红色扰动点改变扰动初值，或使用滑块调整扰动大小。观察当初值扰动减小时，两条积分曲线如何相互靠近。</li>
+                        <li><strong>误差带</strong>：黄色区域表示两条曲线之间的绝对误差，直观显示解的接近程度。</li>
+                        <li><strong>误差曲线</strong>：绿色曲线表示两条曲线之间的绝对误差随x的变化，可显示误差的增长情况。</li>
+                        <li><strong>连续依赖性验证</strong>：通过减小扰动大小，观察误差是否相应减小。如果误差随扰动减小而减小，则满足连续依赖性。</li>
+                        <li><strong>教学重点</strong>：通过可视化实验理解"解对初值的连续依赖性定理"，为学习微分方程理论打下直观基础。</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <footer>
+            <p>解对初值的连续依赖性实验台 | 《常微分方程》第二章§2.5教学辅助工具 | 基于 HTML5 Canvas 与 JavaScript 实现</p>
+        </footer>
+    </div>
+
+    <script>
+	// 检查用户是否已登录
+if (sessionStorage.getItem("allow") !== "ok") {
+    window.location.href = "index.html";
+}
+        // 主应用程序状态和配置
+        const AppState = {
+            // 微分方程
+            equation: "y",
+            equationFunc: null,
+            
+            // 初值设置
+            x0: 0,
+            y0: 1,
+            dx: 0,
+            dy: 0.1,
+            
+            // 绘图范围
+            xMin: -2,
+            xMax: 2,
+            yMin: -2,
+            yMax: 2,
+            
+            // 积分设置
+            xStart: 0,
+            xEnd: 2,
+            stepSize: 0.05,
+            maxSteps: 500,
+            
+            // 显示控制
+            showErrorBand: true,
+            showErrorCurve: false,
+            showConnection: true,
+            showGrid: true,
+            autoUpdate: true,
+            
+            // 积分结果
+            baseSolution: [],
+            perturbedSolution: [],
+            errorData: [],
+            
+            // 当前误差信息
+            errorAtXend: 0,
+            maxError: 0,
+            relativeError: 0,
+            errorGrowthFactor: 0,
+            
+            // 交互状态
+            isDraggingPerturbed: false,
+            dragStartX: 0,
+            dragStartY: 0,
+            
+            // 视图变换
+            viewOffsetX: 0,
+            viewOffsetY: 0,
+            viewScale: 1,
+            
+            // 当前鼠标信息
+            mouseX: 0,
+            mouseY: 0,
+            mouseLogicalX: 0,
+            mouseLogicalY: 0
+        };
+
+        // DOM 元素引用
+        const canvas = document.getElementById('mainCanvas');
+        const ctx = canvas.getContext('2d');
+        const equationInput = document.getElementById('equationInput');
+        const exampleSelect = document.getElementById('exampleSelect');
+        const x0Input = document.getElementById('x0');
+        const y0Input = document.getElementById('y0');
+        const dxInput = document.getElementById('dx');
+        const dyInput = document.getElementById('dy');
+        const perturbationSlider = document.getElementById('perturbationSlider');
+        const perturbationValue = document.getElementById('perturbationValue');
+        const perturbationFill = document.getElementById('perturbationFill');
+        const resetPerturbationBtn = document.getElementById('resetPerturbationBtn');
+        const swapInitialBtn = document.getElementById('swapInitialBtn');
+        const xminInput = document.getElementById('xmin');
+        const xmaxInput = document.getElementById('xmax');
+        const xstartInput = document.getElementById('xstart');
+        const xendInput = document.getElementById('xend');
+        const stepSlider = document.getElementById('stepSlider');
+        const stepValue = document.getElementById('stepValue');
+        const showErrorBandCheck = document.getElementById('showErrorBand');
+        const showErrorCurveCheck = document.getElementById('showErrorCurve');
+        const showConnectionCheck = document.getElementById('showConnection');
+        const showGridCheck = document.getElementById('showGrid');
+        const autoUpdateCheck = document.getElementById('autoUpdate');
+        
+        const baseInitialValueSpan = document.getElementById('baseInitialValue');
+        const perturbedInitialValueSpan = document.getElementById('perturbedInitialValue');
+        const perturbationSizeSpan = document.getElementById('perturbationSize');
+        const continuityAssessmentSpan = document.getElementById('continuityAssessment');
+        const errorAtXendSpan = document.getElementById('errorAtXend');
+        const maxErrorSpan = document.getElementById('maxError');
+        const relativeErrorSpan = document.getElementById('relativeError');
+        const errorGrowthSpan = document.getElementById('errorGrowth');
+        const statusDisplay = document.getElementById('statusDisplay');
+
+        // 颜色方案
+        const Colors = {
+            baseSolution: '#3498db',
+            perturbedSolution: '#e74c3c',
+            errorBand: 'rgba(241, 196, 15, 0.3)',
+            errorCurve: '#2ecc71',
+            connection: '#9b59b6',
+            basePoint: '#3498db',
+            perturbedPoint: '#e74c3c',
+            grid: '#e0e0e0',
+            axis: '#000',
+            text: '#2c3e50'
+        };
+
+        // 核心函数：安全地解析和计算数学表达式
+        function createFunctionFromExpression(expr) {
+            try {
+                const compiled = math.compile(expr);
+                return function(x, y) {
+                    try {
+                        return compiled.evaluate({x: x, y: y});
+                    } catch (err) {
+                        return NaN;
+                    }
+                };
+            } catch (err) {
+                console.error("表达式解析失败:", err.message);
+                alert(`表达式解析错误：${err.message}。请检查数学表达式。`);
+                return (x, y) => 0;
+            }
+        }
+
+        // 更新微分方程函数
+        function updateEquation() {
+            const expr = equationInput.value.trim();
+            try {
+                AppState.equationFunc = createFunctionFromExpression(expr);
+                recomputeSolutions();
+            } catch (err) {
+                alert("微分方程解析错误：" + err.message);
+            }
+        }
+
+        // 四阶龙格-库塔法
+        function rungeKutta4Step(f, x, y, h) {
+            const k1 = f(x, y);
+            const k2 = f(x + h/2, y + h/2 * k1);
+            const k3 = f(x + h/2, y + h/2 * k2);
+            const k4 = f(x + h, y + h * k3);
+            
+            const yNew = y + h/6 * (k1 + 2*k2 + 2*k3 + k4);
+            return yNew;
+        }
+
+        // 计算微分方程的解
+        function computeSolution(f, x0, y0, xEnd, stepSize, maxSteps) {
+            const points = [{x: x0, y: y0}];
+            let x = x0;
+            let y = y0;
+            let steps = 0;
+            
+            // 向前积分
+            while (x < xEnd && steps < maxSteps) {
+                const yNew = rungeKutta4Step(f, x, y, stepSize);
+                x += stepSize;
+                y = yNew;
+                points.push({x, y});
+                steps++;
+                
+                // 如果解发散，停止积分
+                if (Math.abs(y) > 100 || isNaN(y)) {
+                    break;
+                }
+            }
+            
+            return points;
+        }
+
+        // 重新计算所有解
+        function recomputeSolutions() {
+            if (!AppState.equationFunc) return;
+            
+            const f = AppState.equationFunc;
+            const x0 = AppState.x0;
+            const y0 = AppState.y0;
+            const x0Perturbed = x0 + AppState.dx;
+            const y0Perturbed = y0 + AppState.dy;
+            const xEnd = AppState.xEnd;
+            const stepSize = AppState.stepSize;
+            const maxSteps = AppState.maxSteps;
+            
+            // 计算基准解
+            AppState.baseSolution = computeSolution(f, x0, y0, xEnd, stepSize, maxSteps);
+            
+            // 计算扰动解
+            AppState.perturbedSolution = computeSolution(f, x0Perturbed, y0Perturbed, xEnd, stepSize, maxSteps);
+            
+            // 计算误差数据
+            computeErrorData();
+            
+            // 更新误差信息显示
+            updateErrorInfo();
+            
+            // 重新绘制
+            redrawAll();
+        }
+
+        // 计算误差数据
+        function computeErrorData() {
+            AppState.errorData = [];
+            AppState.maxError = 0;
+            AppState.errorAtXend = 0;
+            
+            const basePoints = AppState.baseSolution;
+            const perturbedPoints = AppState.perturbedSolution;
+            
+            if (basePoints.length === 0 || perturbedPoints.length === 0) {
+                return;
+            }
+            
+            // 寻找共同的x范围
+            const minX = Math.max(basePoints[0].x, perturbedPoints[0].x);
+            const maxX = Math.min(
+                basePoints[basePoints.length - 1].x,
+                perturbedPoints[perturbedPoints.length - 1].x
+            );
+            
+            if (minX >= maxX) {
+                return;
+            }
+            
+            // 在共同的x点上计算误差
+            let x = minX;
+            const step = AppState.stepSize;
+            
+            while (x <= maxX) {
+                const yBase = interpolateY(basePoints, x);
+                const yPerturbed = interpolateY(perturbedPoints, x);
+                
+                if (yBase !== null && yPerturbed !== null) {
+                    const error = Math.abs(yBase - yPerturbed);
+                    AppState.errorData.push({x, error});
+                    
+                    if (error > AppState.maxError) {
+                        AppState.maxError = error;
+                    }
+                    
+                    // 记录在x_end处的误差
+                    if (Math.abs(x - AppState.xEnd) < step/2) {
+                        AppState.errorAtXend = error;
+                    }
+                }
+                
+                x += step;
+            }
+            
+            // 计算相对误差
+            const yBaseAtEnd = interpolateY(basePoints, AppState.xEnd);
+            if (yBaseAtEnd !== null && Math.abs(yBaseAtEnd) > 1e-10) {
+                AppState.relativeError = AppState.errorAtXend / Math.abs(yBaseAtEnd);
+            } else {
+                AppState.relativeError = 0;
+            }
+            
+            // 计算误差增长因子
+            const perturbationMagnitude = Math.sqrt(AppState.dx*AppState.dx + AppState.dy*AppState.dy);
+            if (perturbationMagnitude > 1e-10) {
+                AppState.errorGrowthFactor = AppState.errorAtXend / perturbationMagnitude;
+            } else {
+                AppState.errorGrowthFactor = 0;
+            }
+        }
+
+        // 线性插值
+        function interpolateY(points, x) {
+            if (points.length === 0) return null;
+            
+            // 如果x在范围外，返回null
+            if (x < points[0].x || x > points[points.length - 1].x) {
+                return null;
+            }
+            
+            // 找到x所在的区间
+            for (let i = 0; i < points.length - 1; i++) {
+                if (x >= points[i].x && x <= points[i+1].x) {
+                    // 线性插值
+                    const t = (x - points[i].x) / (points[i+1].x - points[i].x);
+                    return points[i].y + t * (points[i+1].y - points[i].y);
+                }
+            }
+            
+            return null;
+        }
+
+        // 更新误差信息显示
+        function updateErrorInfo() {
+            errorAtXendSpan.textContent = AppState.errorAtXend.toFixed(4);
+            maxErrorSpan.textContent = AppState.maxError.toFixed(4);
+            relativeErrorSpan.textContent = AppState.relativeError.toFixed(4);
+            errorGrowthSpan.textContent = AppState.errorGrowthFactor.toFixed(4);
+            
+            // 更新连续依赖性评估
+            updateContinuityAssessment();
+        }
+
+        // 更新连续依赖性评估
+        function updateContinuityAssessment() {
+            const perturbationMagnitude = Math.sqrt(AppState.dx*AppState.dx + AppState.dy*AppState.dy);
+            
+            if (perturbationMagnitude < 1e-10) {
+                continuityAssessmentSpan.innerHTML = `<span class="continuity-indicator">无扰动</span>`;
+            } else {
+                // 根据误差增长因子判断连续依赖性
+                if (AppState.errorGrowthFactor < 5) {
+                    continuityAssessmentSpan.innerHTML = `<span class="continuity-indicator">满足连续依赖性</span>`;
+                } else if (AppState.errorGrowthFactor < 20) {
+                    continuityAssessmentSpan.innerHTML = `<span class="continuity-indicator" style="background-color: #f39c12">中等连续依赖</span>`;
+                } else {
+                    continuityAssessmentSpan.innerHTML = `<span class="continuity-indicator" style="background-color: #e74c3c">连续依赖性较弱</span>`;
+                }
+            }
+        }
+
+        // 坐标转换函数
+        function logicalToCanvas(lx, ly) {
+            const width = canvas.width;
+            const height = canvas.height;
+            
+            // 计算逻辑坐标到画布坐标的缩放
+            const scaleX = width / (AppState.xMax - AppState.xMin);
+            const scaleY = height / (AppState.yMax - AppState.yMin);
+            const scale = Math.min(scaleX, scaleY) * 0.9;
+            
+            const centerX = width / 2;
+            const centerY = height / 2;
+            const logicalCenterX = (AppState.xMin + AppState.xMax) / 2;
+            const logicalCenterY = (AppState.yMin + AppState.yMax) / 2;
+            
+            const x = centerX + (lx - logicalCenterX) * scale;
+            const y = centerY - (ly - logicalCenterY) * scale;
+            
+            return {x, y};
+        }
+        
+        function canvasToLogical(cx, cy) {
+            const width = canvas.width;
+            const height = canvas.height;
+            
+            // 计算逻辑坐标到画布坐标的缩放
+            const scaleX = width / (AppState.xMax - AppState.xMin);
+            const scaleY = height / (AppState.yMax - AppState.yMin);
+            const scale = Math.min(scaleX, scaleY) * 0.9;
+            
+            const centerX = width / 2;
+            const centerY = height / 2;
+            const logicalCenterX = (AppState.xMin + AppState.xMax) / 2;
+            const logicalCenterY = (AppState.yMin + AppState.yMax) / 2;
+            
+            const lx = logicalCenterX + (cx - centerX) / scale;
+            const ly = logicalCenterY - (cy - centerY) / scale;
+            
+            return {x: lx, y: ly};
+        }
+
+        // 绘图函数
+        function drawGridAndAxes() {
+            if (!AppState.showGrid) return;
+            
+            ctx.save();
+            ctx.strokeStyle = Colors.grid;
+            ctx.lineWidth = 1;
+            ctx.setLineDash([2, 2]);
+            
+            const width = canvas.width;
+            const height = canvas.height;
+            
+            // 计算逻辑坐标到画布坐标的缩放
+            const scaleX = width / (AppState.xMax - AppState.xMin);
+            const scaleY = height / (AppState.yMax - AppState.yMin);
+            const scale = Math.min(scaleX, scaleY) * 0.9;
+            
+            const centerX = width / 2;
+            const centerY = height / 2;
+            const logicalCenterX = (AppState.xMin + AppState.xMax) / 2;
+            const logicalCenterY = (AppState.yMin + AppState.yMax) / 2;
+            
+            // 绘制垂直线
+            const xStep = getGridStep(AppState.xMax - AppState.xMin);
+            let x = Math.ceil(AppState.xMin / xStep) * xStep;
+            
+            while (x <= AppState.xMax) {
+                const canvasX = centerX + (x - logicalCenterX) * scale;
+                
+                if (canvasX >= 0 && canvasX <= width) {
+                    ctx.beginPath();
+                    ctx.moveTo(canvasX, 0);
+                    ctx.lineTo(canvasX, height);
+                    ctx.stroke();
+                }
+                
+                x += xStep;
+            }
+            
+            // 绘制水平线
+            const yStep = getGridStep(AppState.yMax - AppState.yMin);
+            let y = Math.ceil(AppState.yMin / yStep) * yStep;
+            
+            while (y <= AppState.yMax) {
+                const canvasY = centerY - (y - logicalCenterY) * scale;
+                
+                if (canvasY >= 0 && canvasY <= height) {
+                    ctx.beginPath();
+                    ctx.moveTo(0, canvasY);
+                    ctx.lineTo(width, canvasY);
+                    ctx.stroke();
+                }
+                
+                y += yStep;
+            }
+            
+            ctx.setLineDash([]);
+            
+            // 绘制坐标轴
+            ctx.strokeStyle = Colors.axis;
+            ctx.lineWidth = 2;
+            
+            // x轴
+            const xAxisY = centerY + logicalCenterY * scale;
+            if (xAxisY >= 0 && xAxisY <= height) {
+                ctx.beginPath();
+                ctx.moveTo(0, xAxisY);
+                ctx.lineTo(width, xAxisY);
+                ctx.stroke();
+            }
+            
+            // y轴
+            const yAxisX = centerX - logicalCenterX * scale;
+            if (yAxisX >= 0 && yAxisX <= width) {
+                ctx.beginPath();
+                ctx.moveTo(yAxisX, 0);
+                ctx.lineTo(yAxisX, height);
+                ctx.stroke();
+            }
+            
+            // 绘制坐标轴标签
+            ctx.fillStyle = Colors.text;
+            ctx.font = '12px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'top';
+            
+            // x轴刻度
+            x = Math.ceil(AppState.xMin / xStep) * xStep;
+            while (x <= AppState.xMax) {
+                const canvasX = centerX + (x - logicalCenterX) * scale;
+                if (Math.abs(x) > 0.01) {
+                    ctx.fillText(x.toFixed(1), canvasX, xAxisY + 5);
+                }
+                x += xStep;
+            }
+            
+            // y轴刻度
+            ctx.textAlign = 'right';
+            ctx.textBaseline = 'middle';
+            y = Math.ceil(AppState.yMin / yStep) * yStep;
+            while (y <= AppState.yMax) {
+                const canvasY = centerY - (y - logicalCenterY) * scale;
+                if (Math.abs(y) > 0.01) {
+                    ctx.fillText(y.toFixed(1), yAxisX - 5, canvasY);
+                }
+                y += yStep;
+            }
+            
+            ctx.restore();
+        }
+        
+        function getGridStep(range) {
+            const log10 = Math.log10(range);
+            const power = Math.floor(log10);
+            const fraction = range / Math.pow(10, power);
+            
+            if (fraction < 2) return Math.pow(10, power) / 2;
+            if (fraction < 5) return Math.pow(10, power);
+            return 2 * Math.pow(10, power);
+        }
+        
+        function drawSolutionCurve(points, color, lineWidth = 2) {
+            if (points.length < 2) return;
+            
+            ctx.save();
+            ctx.strokeStyle = color;
+            ctx.lineWidth = lineWidth;
+            ctx.lineJoin = 'round';
+            ctx.lineCap = 'round';
+            ctx.beginPath();
+            
+            const firstPoint = logicalToCanvas(points[0].x, points[0].y);
+            ctx.moveTo(firstPoint.x, firstPoint.y);
+            
+            for (let i = 1; i < points.length; i++) {
+                const point = logicalToCanvas(points[i].x, points[i].y);
+                ctx.lineTo(point.x, point.y);
+            }
+            
+            ctx.stroke();
+            ctx.restore();
+        }
+        
+        function drawErrorBand() {
+            if (!AppState.showErrorBand || AppState.errorData.length < 2) return;
+            
+            ctx.save();
+            ctx.fillStyle = Colors.errorBand;
+            ctx.beginPath();
+            
+            // 绘制误差带的上边界
+            for (let i = 0; i < AppState.errorData.length; i++) {
+                const point = AppState.errorData[i];
+                const baseY = interpolateY(AppState.baseSolution, point.x);
+                if (baseY === null) continue;
+                
+                const canvasPoint = logicalToCanvas(point.x, baseY + point.error/2);
+                if (i === 0) {
+                    ctx.moveTo(canvasPoint.x, canvasPoint.y);
+                } else {
+                    ctx.lineTo(canvasPoint.x, canvasPoint.y);
+                }
+            }
+            
+            // 绘制误差带的下边界
+            for (let i = AppState.errorData.length - 1; i >= 0; i--) {
+                const point = AppState.errorData[i];
+                const baseY = interpolateY(AppState.baseSolution, point.x);
+                if (baseY === null) continue;
+                
+                const canvasPoint = logicalToCanvas(point.x, baseY - point.error/2);
+                ctx.lineTo(canvasPoint.x, canvasPoint.y);
+            }
+            
+            ctx.closePath();
+            ctx.fill();
+            ctx.restore();
+        }
+        
+        function drawErrorCurve() {
+            if (!AppState.showErrorCurve || AppState.errorData.length < 2) return;
+            
+            ctx.save();
+            ctx.strokeStyle = Colors.errorCurve;
+            ctx.lineWidth = 2;
+            ctx.lineJoin = 'round';
+            ctx.lineCap = 'round';
+            ctx.beginPath();
+            
+            const firstPoint = logicalToCanvas(
+                AppState.errorData[0].x, 
+                AppState.errorData[0].error
+            );
+            ctx.moveTo(firstPoint.x, firstPoint.y);
+            
+            for (let i = 1; i < AppState.errorData.length; i++) {
+                const point = logicalToCanvas(
+                    AppState.errorData[i].x, 
+                    AppState.errorData[i].error
+                );
+                ctx.lineTo(point.x, point.y);
+            }
+            
+            ctx.stroke();
+            ctx.restore();
+        }
+        
+        function drawInitialPoints() {
+            // 绘制基准初值点
+            const basePoint = logicalToCanvas(AppState.x0, AppState.y0);
+            ctx.save();
+            ctx.fillStyle = Colors.basePoint;
+            ctx.beginPath();
+            ctx.arc(basePoint.x, basePoint.y, 6, 0, 2 * Math.PI);
+            ctx.fill();
+            
+            // 绘制基准点标签
+            ctx.fillStyle = Colors.text;
+            ctx.font = '12px Arial';
+            ctx.textAlign = 'left';
+            ctx.textBaseline = 'bottom';
+            ctx.fillText('基准', basePoint.x + 8, basePoint.y - 8);
+            ctx.restore();
+            
+            // 绘制扰动初值点
+            const perturbedPoint = logicalToCanvas(
+                AppState.x0 + AppState.dx, 
+                AppState.y0 + AppState.dy
+            );
+            ctx.save();
+            ctx.fillStyle = Colors.perturbedPoint;
+            ctx.beginPath();
+            ctx.arc(perturbedPoint.x, perturbedPoint.y, 6, 0, 2 * Math.PI);
+            ctx.fill();
+            
+            // 绘制扰动点标签
+            ctx.fillStyle = Colors.text;
+            ctx.font = '12px Arial';
+            ctx.textAlign = 'left';
+            ctx.textBaseline = 'bottom';
+            ctx.fillText('扰动', perturbedPoint.x + 8, perturbedPoint.y - 8);
+            ctx.restore();
+            
+            // 绘制初值点连线
+            if (AppState.showConnection) {
+                ctx.save();
+                ctx.strokeStyle = Colors.connection;
+                ctx.lineWidth = 1;
+                ctx.setLineDash([5, 5]);
+                ctx.beginPath();
+                ctx.moveTo(basePoint.x, basePoint.y);
+                ctx.lineTo(perturbedPoint.x, perturbedPoint.y);
+                ctx.stroke();
+                ctx.restore();
+            }
+        }
+        
+        function redrawAll() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawGridAndAxes();
+            drawErrorBand();
+            drawSolutionCurve(AppState.baseSolution, Colors.baseSolution);
+            drawSolutionCurve(AppState.perturbedSolution, Colors.perturbedSolution);
+            drawErrorCurve();
+            drawInitialPoints();
+        }
+
+        // 更新显示信息
+        function updateDisplayInfo() {
+            baseInitialValueSpan.textContent = `(${AppState.x0.toFixed(2)}, ${AppState.y0.toFixed(2)})`;
+            perturbedInitialValueSpan.textContent = `(${(AppState.x0 + AppState.dx).toFixed(2)}, ${(AppState.y0 + AppState.dy).toFixed(2)})`;
+            
+            const perturbationMagnitude = Math.sqrt(AppState.dx*AppState.dx + AppState.dy*AppState.dy);
+            perturbationSizeSpan.textContent = `(${AppState.dx.toFixed(2)}, ${AppState.dy.toFixed(2)}) 模: ${perturbationMagnitude.toFixed(2)}`;
+            
+            xstartInput.value = AppState.x0.toFixed(1);
+            
+            // 更新扰动可视化条
+            const perturbationPercentage = (perturbationMagnitude / 0.5) * 100;
+            perturbationFill.style.width = `${perturbationPercentage}%`;
+        }
+
+        // 重置扰动
+        function resetPerturbation() {
+            AppState.dx = 0;
+            AppState.dy = 0;
+            dxInput.value = AppState.dx;
+            dyInput.value = AppState.dy;
+            perturbationSlider.value = 0;
+            perturbationValue.textContent = "0.00";
+            recomputeSolutions();
+            updateDisplayInfo();
+        }
+
+        // 交换初值
+        function swapInitial() {
+            const newX0 = AppState.x0 + AppState.dx;
+            const newY0 = AppState.y0 + AppState.dy;
+            
+            AppState.x0 = newX0;
+            AppState.y0 = newY0;
+            AppState.dx = 0;
+            AppState.dy = 0;
+            
+            x0Input.value = AppState.x0;
+            y0Input.value = AppState.y0;
+            dxInput.value = AppState.dx;
+            dyInput.value = AppState.dy;
+            perturbationSlider.value = 0;
+            perturbationValue.textContent = "0.00";
+            
+            recomputeSolutions();
+            updateDisplayInfo();
+        }
+
+        // 初始化
+        function init() {
+            // 设置初始值
+            updateEquation();
+            updateDisplayInfo();
+            
+            // 设置滑块值显示
+            stepValue.textContent = stepSlider.value;
+            perturbationValue.textContent = perturbationSlider.value;
+            
+            // 绘制初始图形
+            redrawAll();
+        }
+
+        // 事件监听
+        equationInput.addEventListener('change', updateEquation);
+        
+        exampleSelect.addEventListener('change', () => {
+            const example = exampleSelect.value;
+            if (example === 'example1') {
+                equationInput.value = 'y';
+            } else if (example === 'example2') {
+                equationInput.value = '-y';
+            } else if (example === 'example3') {
+                equationInput.value = 'x + y';
+            } else if (example === 'example4') {
+                equationInput.value = 'sin(x*y)';
+            } else if (example === 'example5') {
+                equationInput.value = '0.5*y';
+            } else if (example === 'example6') {
+                equationInput.value = 'cos(x)';
+            }
+            updateEquation();
+        });
+        
+        x0Input.addEventListener('change', () => {
+            AppState.x0 = parseFloat(x0Input.value);
+            recomputeSolutions();
+            updateDisplayInfo();
+        });
+        
+        y0Input.addEventListener('change', () => {
+            AppState.y0 = parseFloat(y0Input.value);
+            recomputeSolutions();
+            updateDisplayInfo();
+        });
+        
+        dxInput.addEventListener('change', () => {
+            AppState.dx = parseFloat(dxInput.value);
+            const perturbationMagnitude = Math.sqrt(AppState.dx*AppState.dx + AppState.dy*AppState.dy);
+            perturbationSlider.value = Math.min(perturbationMagnitude, 0.5);
+            perturbationValue.textContent = perturbationSlider.value;
+            recomputeSolutions();
+            updateDisplayInfo();
+        });
+        
+        dyInput.addEventListener('change', () => {
+            AppState.dy = parseFloat(dyInput.value);
+            const perturbationMagnitude = Math.sqrt(AppState.dx*AppState.dx + AppState.dy*AppState.dy);
+            perturbationSlider.value = Math.min(perturbationMagnitude, 0.5);
+            perturbationValue.textContent = perturbationSlider.value;
+            recomputeSolutions();
+            updateDisplayInfo();
+        });
+        
+        perturbationSlider.addEventListener('input', () => {
+            const perturbation = parseFloat(perturbationSlider.value);
+            perturbationValue.textContent = perturbation.toFixed(2);
+            
+            // 保持扰动方向不变，只改变大小
+            const perturbationMagnitude = Math.sqrt(AppState.dx*AppState.dx + AppState.dy*AppState.dy);
+            if (perturbationMagnitude > 1e-10) {
+                const scale = perturbation / perturbationMagnitude;
+                AppState.dx *= scale;
+                AppState.dy *= scale;
+            } else {
+                // 如果原来没有扰动，默认给y方向扰动
+                AppState.dx = 0;
+                AppState.dy = perturbation;
+            }
+            
+            dxInput.value = AppState.dx;
+            dyInput.value = AppState.dy;
+            
+            recomputeSolutions();
+            updateDisplayInfo();
+        });
+        
+        resetPerturbationBtn.addEventListener('click', resetPerturbation);
+        swapInitialBtn.addEventListener('click', swapInitial);
+        
+        xminInput.addEventListener('change', () => {
+            AppState.xMin = parseFloat(xminInput.value);
+            redrawAll();
+        });
+        
+        xmaxInput.addEventListener('change', () => {
+            AppState.xMax = parseFloat(xmaxInput.value);
+            redrawAll();
+        });
+        
+        xendInput.addEventListener('change', () => {
+            AppState.xEnd = parseFloat(xendInput.value);
+            recomputeSolutions();
+        });
+        
+        stepSlider.addEventListener('input', () => {
+            AppState.stepSize = parseFloat(stepSlider.value);
+            stepValue.textContent = AppState.stepSize.toFixed(2);
+            recomputeSolutions();
+        });
+        
+        showErrorBandCheck.addEventListener('change', () => {
+            AppState.showErrorBand = showErrorBandCheck.checked;
+            redrawAll();
+        });
+        
+        showErrorCurveCheck.addEventListener('change', () => {
+            AppState.showErrorCurve = showErrorCurveCheck.checked;
+            redrawAll();
+        });
+        
+        showConnectionCheck.addEventListener('change', () => {
+            AppState.showConnection = showConnectionCheck.checked;
+            redrawAll();
+        });
+        
+        showGridCheck.addEventListener('change', () => {
+            AppState.showGrid = showGridCheck.checked;
+            redrawAll();
+        });
+        
+        autoUpdateCheck.addEventListener('change', () => {
+            AppState.autoUpdate = autoUpdateCheck.checked;
+        });
+        
+        // 鼠标事件
+        canvas.addEventListener('mousedown', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+            const logicalPos = canvasToLogical(mouseX, mouseY);
+            
+            // 检查是否点击了扰动点
+            const perturbedPoint = logicalToCanvas(
+                AppState.x0 + AppState.dx, 
+                AppState.y0 + AppState.dy
+            );
+            
+            const distance = Math.sqrt(
+                Math.pow(mouseX - perturbedPoint.x, 2) + 
+                Math.pow(mouseY - perturbedPoint.y, 2)
+            );
+            
+            if (distance < 10) {
+                AppState.isDraggingPerturbed = true;
+                AppState.dragStartX = mouseX;
+                AppState.dragStartY = mouseY;
+                canvas.style.cursor = 'grabbing';
+            }
+        });
+        
+        canvas.addEventListener('mousemove', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+            const logicalPos = canvasToLogical(mouseX, mouseY);
+            
+            // 更新鼠标位置显示
+            AppState.mouseX = mouseX;
+            AppState.mouseY = mouseY;
+            AppState.mouseLogicalX = logicalPos.x;
+            AppState.mouseLogicalY = logicalPos.y;
+            
+            // 检查是否在拖拽扰动点
+            if (AppState.isDraggingPerturbed) {
+                const newLogicalPos = canvasToLogical(mouseX, mouseY);
+                
+                // 计算扰动值
+                AppState.dx = newLogicalPos.x - AppState.x0;
+                AppState.dy = newLogicalPos.y - AppState.y0;
+                
+                // 限制扰动大小
+                const maxPerturbation = 0.5;
+                const perturbationMagnitude = Math.sqrt(AppState.dx*AppState.dx + AppState.dy*AppState.dy);
+                if (perturbationMagnitude > maxPerturbation) {
+                    AppState.dx = AppState.dx * maxPerturbation / perturbationMagnitude;
+                    AppState.dy = AppState.dy * maxPerturbation / perturbationMagnitude;
+                }
+                
+                // 更新输入控件
+                dxInput.value = AppState.dx.toFixed(2);
+                dyInput.value = AppState.dy.toFixed(2);
+                const newPerturbation = Math.sqrt(AppState.dx*AppState.dx + AppState.dy*AppState.dy);
+                perturbationSlider.value = newPerturbation;
+                perturbationValue.textContent = newPerturbation.toFixed(2);
+                
+                // 实时更新
+                if (AppState.autoUpdate) {
+                    recomputeSolutions();
+                    updateDisplayInfo();
+                }
+                
+                // 更新状态显示
+                statusDisplay.innerHTML = `<strong>当前状态：</strong> 拖拽中 - 扰动: (${AppState.dx.toFixed(2)}, ${AppState.dy.toFixed(2)})`;
+            } else {
+                // 检查鼠标是否在扰动点附近
+                const perturbedPoint = logicalToCanvas(
+                    AppState.x0 + AppState.dx, 
+                    AppState.y0 + AppState.dy
+                );
+                
+                const distance = Math.sqrt(
+                    Math.pow(mouseX - perturbedPoint.x, 2) + 
+                    Math.pow(mouseY - perturbedPoint.y, 2)
+                );
+                
+                if (distance < 10) {
+                    canvas.style.cursor = 'pointer';
+                } else {
+                    canvas.style.cursor = 'crosshair';
+                }
+            }
+        });
+        
+        canvas.addEventListener('mouseup', (e) => {
+            if (AppState.isDraggingPerturbed) {
+                AppState.isDraggingPerturbed = false;
+                canvas.style.cursor = 'crosshair';
+                
+                // 最终更新
+                if (!AppState.autoUpdate) {
+                    recomputeSolutions();
+                    updateDisplayInfo();
+                }
+                
+                statusDisplay.innerHTML = `<strong>当前状态：</strong> 拖拽红色扰动点改变扰动初值，观察两条积分曲线的接近程度`;
+            }
+        });
+        
+        canvas.addEventListener('mouseleave', (e) => {
+            if (AppState.isDraggingPerturbed) {
+                AppState.isDraggingPerturbed = false;
+                canvas.style.cursor = 'crosshair';
+                
+                // 最终更新
+                if (!AppState.autoUpdate) {
+                    recomputeSolutions();
+                    updateDisplayInfo();
+                }
+            }
+        });
+
+        // 启动应用
+        window.onload = init;
+    </script>
+</body>
+</html>
