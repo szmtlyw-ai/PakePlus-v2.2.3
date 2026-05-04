@@ -1,0 +1,1527 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>等角轨线与正交轨线绘制器</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+        }
+        
+        body {
+            background-color: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 25px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #4a6fa5;
+        }
+        
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 8px;
+        }
+        
+        .subtitle {
+            color: #7f8c8d;
+            font-size: 1.1em;
+        }
+        
+        .main-content {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        
+        .control-panel {
+            flex: 1;
+            min-width: 350px;
+            background-color: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+        
+        .visualization-panel {
+            flex: 2;
+            min-width: 800px;
+            background-color: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+        
+        .section-title {
+            color: #3498db;
+            font-size: 1.2em;
+            margin-bottom: 15px;
+            padding-left: 10px;
+            border-left: 4px solid #3498db;
+        }
+        
+        .input-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        
+        input[type="text"], select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 1em;
+            transition: border-color 0.3s;
+        }
+        
+        input[type="text"]:focus, select:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+        
+        .range-inputs {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .range-inputs input {
+            flex: 1;
+        }
+        
+        .angle-control {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .angle-slider-container {
+            flex: 1;
+        }
+        
+        .angle-display {
+            min-width: 60px;
+            text-align: center;
+            font-weight: bold;
+            color: #e74c3c;
+        }
+        
+        input[type="range"] {
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: #ddd;
+            outline: none;
+        }
+        
+        .preset-examples {
+            margin-bottom: 20px;
+        }
+        
+        .preset-buttons {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .preset-btn {
+            padding: 10px;
+            background-color: #ecf0f1;
+            border: 1px solid #bdc3c7;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: center;
+        }
+        
+        .preset-btn:hover {
+            background-color: #d5dbdb;
+        }
+        
+        .preset-btn.active {
+            background-color: #3498db;
+            color: white;
+            border-color: #2980b9;
+        }
+        
+        .checkbox-group {
+            margin-bottom: 15px;
+        }
+        
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        
+        .checkbox-item input {
+            margin-right: 8px;
+        }
+        
+        .density-controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .canvas-container {
+            position: relative;
+            width: 100%;
+            height: 600px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+        
+        #mainCanvas {
+            display: block;
+            background-color: white;
+        }
+        
+        .info-panel {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 6px;
+            border: 1px solid #e9ecef;
+        }
+        
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .info-row:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+        }
+        
+        .info-label {
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        
+        .info-value {
+            color: #7f8c8d;
+        }
+        
+        .legend {
+            display: flex;
+            gap: 20px;
+            margin-top: 10px;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .legend-color {
+            width: 20px;
+            height: 3px;
+        }
+        
+        .curve-color {
+            background-color: #3498db;
+        }
+        
+        .ortho-color {
+            background-color: #e74c3c;
+        }
+        
+        .tangent-color {
+            background-color: #2ecc71;
+        }
+        
+        .coordinate-info {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            background-color: rgba(255, 255, 255, 0.9);
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 0.9em;
+            border: 1px solid #ddd;
+        }
+        
+        .math-display {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            border-left: 4px solid #3498db;
+            margin-bottom: 20px;
+            font-family: 'Cambria', 'Times New Roman', serif;
+        }
+        
+        .math-equation {
+            font-size: 1.1em;
+            margin-bottom: 5px;
+        }
+        
+        .step-indicator {
+            font-size: 0.9em;
+            color: #7f8c8d;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 600;
+            transition: background-color 0.3s;
+        }
+        
+        .btn:hover {
+            background-color: #2980b9;
+        }
+        
+        .btn-reset {
+            background-color: #e74c3c;
+        }
+        
+        .btn-reset:hover {
+            background-color: #c0392b;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        @media (max-width: 1200px) {
+            .main-content {
+                flex-direction: column;
+            }
+            
+            .control-panel, .visualization-panel {
+                min-width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>等角轨线与正交轨线绘制器</h1>
+            <p class="subtitle">直观展示给定曲线族的正交轨线或等角轨线 | 《常微分方程》第一章§1.8.1教学辅助工具</p>
+        </header>
+        
+        <div class="main-content">
+            <div class="control-panel">
+                <h2 class="section-title">1. 曲线族设置</h2>
+                
+                <div class="input-group">
+                    <label for="curveFamily">曲线族方程 (支持 y = f(x, C) 或 F(x, y, C) = 0)</label>
+                    <input type="text" id="curveFamily" value="y = C*x" placeholder="例如: y = C*x 或 x^2 + y^2 = C">
+                </div>
+                
+                <div class="input-group">
+                    <label for="paramRange">参数 C 的取值范围</label>
+                    <div class="range-inputs">
+                        <input type="number" id="paramMin" value="-3" step="0.5" placeholder="最小值">
+                        <input type="number" id="paramMax" value="3" step="0.5" placeholder="最大值">
+                    </div>
+                </div>
+                
+                <h2 class="section-title">2. 等角角度设置</h2>
+                
+                <div class="angle-control">
+                    <div class="angle-slider-container">
+                        <label for="angleSlider">等角角度 α (°)</label>
+                        <input type="range" id="angleSlider" min="0" max="180" value="90" step="1">
+                    </div>
+                    <div class="angle-display" id="angleValue">90°</div>
+                </div>
+                
+                <div class="checkbox-group">
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="orthogonalCheckbox" checked>
+                        <label for="orthogonalCheckbox">正交轨线 (α = 90°)</label>
+                    </div>
+                </div>
+                
+                <h2 class="section-title">3. 预设示例</h2>
+                
+                <div class="preset-examples">
+                    <p>选择预设示例以快速开始：</p>
+                    <div class="preset-buttons">
+                        <div class="preset-btn active" data-preset="1">直线族 y = C*x</div>
+                        <div class="preset-btn" data-preset="2">同心圆族 x² + y² = C</div>
+                        <div class="preset-btn" data-preset="3">抛物线族 y = C*x²</div>
+                        <div class="preset-btn" data-preset="4">指数曲线族 y = C*e^x</div>
+                        <div class="preset-btn" data-preset="5">双曲线族 x*y = C</div>
+                    </div>
+                </div>
+                
+                <h2 class="section-title">4. 绘图设置</h2>
+                
+                <div class="input-group">
+                    <label for="xRange">x轴范围</label>
+                    <div class="range-inputs">
+                        <input type="number" id="xMin" value="-5" step="0.5" placeholder="x最小值">
+                        <input type="number" id="xMax" value="5" step="0.5" placeholder="x最大值">
+                    </div>
+                </div>
+                
+                <div class="input-group">
+                    <label for="yRange">y轴范围</label>
+                    <div class="range-inputs">
+                        <input type="number" id="yMin" value="-5" step="0.5" placeholder="y最小值">
+                        <input type="number" id="yMax" value="5" step="0.5" placeholder="y最大值">
+                    </div>
+                </div>
+                
+                <div class="density-controls">
+                    <div class="input-group">
+                        <label for="curveDensity">曲线族密度 (C的数量)</label>
+                        <input type="range" id="curveDensity" min="5" max="30" value="15">
+                        <span id="curveDensityValue">15</span>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="orthoDensity">等角轨线密度</label>
+                        <input type="range" id="orthoDensity" min="5" max="30" value="15">
+                        <span id="orthoDensityValue">15</span>
+                    </div>
+                </div>
+                
+                <h2 class="section-title">5. 视图控制</h2>
+                
+                <div class="checkbox-group">
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="showCurves" checked>
+                        <label for="showCurves">显示曲线族</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="showOrtho" checked>
+                        <label for="showOrtho">显示等角轨线</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="showTangents" checked>
+                        <label for="showTangents">显示切线验证</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="showGrid" checked>
+                        <label for="showGrid">显示坐标网格</label>
+                    </div>
+                </div>
+                
+                <div class="button-group">
+                    <button class="btn" id="drawBtn">绘制曲线</button>
+                    <button class="btn btn-reset" id="resetBtn">重置视图</button>
+                </div>
+            </div>
+            
+            <div class="visualization-panel">
+                <h2 class="section-title">可视化视图</h2>
+                
+                <div class="canvas-container">
+                    <canvas id="mainCanvas" width="800" height="600"></canvas>
+                    <div class="coordinate-info" id="coordinateInfo">鼠标位置: (0.00, 0.00)</div>
+                </div>
+                
+                <div class="info-panel">
+                    <h3>当前设置与信息</h3>
+                    <div class="info-row">
+                        <span class="info-label">曲线族方程:</span>
+                        <span class="info-value" id="currentEquation">y = C*x</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">等角角度 α:</span>
+                        <span class="info-value" id="currentAngle">90° (正交)</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">曲线族微分方程:</span>
+                        <span class="info-value" id="diffEquation">y' = y/x</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">等角轨线微分方程:</span>
+                        <span class="info-value" id="orthoDiffEquation">y' = -x/y</span>
+                    </div>
+                    
+                    <div class="legend">
+                        <div class="legend-item">
+                            <div class="legend-color curve-color"></div>
+                            <div class="legend-text">曲线族</div>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color ortho-color"></div>
+                            <div class="legend-text">等角轨线</div>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color tangent-color"></div>
+                            <div class="legend-text">切线方向</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="math-display">
+                    <div class="math-equation"><strong>等角轨线公式：</strong> tan(α) = (y₂' - y₁') / (1 + y₁'·y₂')</div>
+                    <div class="step-indicator">其中 y₁' 是曲线族的切线斜率，y₂' 是等角轨线的切线斜率</div>
+                    <div class="math-equation" id="orthoFormula"><strong>正交轨线公式 (α=90°):</strong> y₂' = -1 / y₁'</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+	// 检查用户是否已登录
+if (sessionStorage.getItem("allow") !== "ok") {
+    window.location.href = "index.html";
+}
+        // 主应用程序状态
+        const AppState = {
+            // 当前曲线族设置
+            curveFamily: 'y = C*x',
+            paramMin: -3,
+            paramMax: 3,
+            angle: 90, // 角度，单位：度
+            
+            // 绘图范围
+            xMin: -5,
+            xMax: 5,
+            yMin: -5,
+            yMax: 5,
+            
+            // 密度控制
+            curveDensity: 15,
+            orthoDensity: 15,
+            
+            // 视图控制
+            showCurves: true,
+            showOrtho: true,
+            showTangents: true,
+            showGrid: true,
+            
+            // 当前鼠标位置
+            mouseX: 0,
+            mouseY: 0,
+            canvasMouseX: 0,
+            canvasMouseY: 0,
+            
+            // 当前预设示例
+            currentPreset: 1
+        };
+        
+        // DOM 元素引用
+        const curveFamilyInput = document.getElementById('curveFamily');
+        const paramMinInput = document.getElementById('paramMin');
+        const paramMaxInput = document.getElementById('paramMax');
+        const angleSlider = document.getElementById('angleSlider');
+        const angleValue = document.getElementById('angleValue');
+        const orthogonalCheckbox = document.getElementById('orthogonalCheckbox');
+        const xMinInput = document.getElementById('xMin');
+        const xMaxInput = document.getElementById('xMax');
+        const yMinInput = document.getElementById('yMin');
+        const yMaxInput = document.getElementById('yMax');
+        const curveDensitySlider = document.getElementById('curveDensity');
+        const curveDensityValue = document.getElementById('curveDensityValue');
+        const orthoDensitySlider = document.getElementById('orthoDensity');
+        const orthoDensityValue = document.getElementById('orthoDensityValue');
+        const showCurvesCheck = document.getElementById('showCurves');
+        const showOrthoCheck = document.getElementById('showOrtho');
+        const showTangentsCheck = document.getElementById('showTangents');
+        const showGridCheck = document.getElementById('showGrid');
+        const drawBtn = document.getElementById('drawBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const mainCanvas = document.getElementById('mainCanvas');
+        const ctx = mainCanvas.getContext('2d');
+        const coordinateInfo = document.getElementById('coordinateInfo');
+        const currentEquation = document.getElementById('currentEquation');
+        const currentAngle = document.getElementById('currentAngle');
+        const diffEquation = document.getElementById('diffEquation');
+        const orthoDiffEquation = document.getElementById('orthoDiffEquation');
+        const orthoFormula = document.getElementById('orthoFormula');
+        const presetButtons = document.querySelectorAll('.preset-btn');
+        
+        // 预设示例配置
+        const PresetExamples = {
+            1: {
+                name: "直线族 y = C*x",
+                equation: "y = C*x",
+                type: "explicit",
+                diffEq: "y' = y/x",
+                orthoDiffEq: "y' = -x/y",
+                orthoSolution: "x² + y² = K",
+                paramRange: { min: -3, max: 3 },
+                xRange: { min: -5, max: 5 },
+                yRange: { min: -5, max: 5 }
+            },
+            2: {
+                name: "同心圆族 x² + y² = C",
+                equation: "x^2 + y^2 = C",
+                type: "implicit",
+                diffEq: "y' = -x/y",
+                orthoDiffEq: "y' = y/x",
+                orthoSolution: "y = K*x",
+                paramRange: { min: 1, max: 16 },
+                xRange: { min: -5, max: 5 },
+                yRange: { min: -5, max: 5 }
+            },
+            3: {
+                name: "抛物线族 y = C*x²",
+                equation: "y = C*x^2",
+                type: "explicit",
+                diffEq: "y' = 2y/x",
+                orthoDiffEq: "y' = -x/(2y)",
+                orthoSolution: "x² + 2y² = K",
+                paramRange: { min: -2, max: 2 },
+                xRange: { min: -5, max: 5 },
+                yRange: { min: -5, max: 5 }
+            },
+            4: {
+                name: "指数曲线族 y = C*e^x",
+                equation: "y = C*e^x",
+                type: "explicit",
+                diffEq: "y' = y",
+                orthoDiffEq: "y' = -1/y",
+                orthoSolution: "y²/2 + x = K",
+                paramRange: { min: -2, max: 2 },
+                xRange: { min: -3, max: 3 },
+                yRange: { min: -5, max: 5 }
+            },
+            5: {
+                name: "双曲线族 x*y = C",
+                equation: "x*y = C",
+                type: "implicit",
+                diffEq: "y' = -y/x",
+                orthoDiffEq: "y' = x/y",
+                orthoSolution: "y² - x² = K",
+                paramRange: { min: -4, max: 4 },
+                xRange: { min: -5, max: 5 },
+                yRange: { min: -5, max: 5 }
+            }
+        };
+        
+        // 颜色方案
+        const Colors = {
+            background: '#ffffff',
+            grid: '#e0e0e0',
+            axis: '#2c3e50',
+            text: '#2c3e50',
+            curveFamily: '#3498db',
+            orthoFamily: '#e74c3c',
+            tangent: '#2ecc71',
+            point: '#9b59b6',
+            highlight: '#f39c12'
+        };
+        
+        // 初始化应用程序
+        function initApp() {
+            // 设置事件监听器
+            curveFamilyInput.addEventListener('input', updateCurveFamily);
+            paramMinInput.addEventListener('input', updateParamRange);
+            paramMaxInput.addEventListener('input', updateParamRange);
+            angleSlider.addEventListener('input', updateAngle);
+            orthogonalCheckbox.addEventListener('change', toggleOrthogonal);
+            xMinInput.addEventListener('input', updateXRange);
+            xMaxInput.addEventListener('input', updateXRange);
+            yMinInput.addEventListener('input', updateYRange);
+            yMaxInput.addEventListener('input', updateYRange);
+            curveDensitySlider.addEventListener('input', updateCurveDensity);
+            orthoDensitySlider.addEventListener('input', updateOrthoDensity);
+            showCurvesCheck.addEventListener('change', updateViewControls);
+            showOrthoCheck.addEventListener('change', updateViewControls);
+            showTangentsCheck.addEventListener('change', updateViewControls);
+            showGridCheck.addEventListener('change', updateViewControls);
+            
+            // 绘制按钮事件
+            drawBtn.addEventListener('click', function() {
+                drawAll();
+            });
+            
+            // 重置按钮事件
+            resetBtn.addEventListener('click', function() {
+                loadPreset(AppState.currentPreset);
+            });
+            
+            // 预设示例按钮事件
+            presetButtons.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const presetId = parseInt(this.dataset.preset);
+                    loadPreset(presetId);
+                });
+            });
+            
+            // 鼠标移动事件
+            mainCanvas.addEventListener('mousemove', handleMouseMove);
+            
+            // 初始化绘制
+            loadPreset(1);
+            drawAll();
+            
+            // 初始化显示值
+            updateAngle();
+            updateCurveDensity();
+            updateOrthoDensity();
+        }
+        
+        // 更新曲线族
+        function updateCurveFamily() {
+            AppState.curveFamily = curveFamilyInput.value;
+            updateEquationInfo();
+        }
+        
+        // 更新参数范围
+        function updateParamRange() {
+            AppState.paramMin = parseFloat(paramMinInput.value) || -3;
+            AppState.paramMax = parseFloat(paramMaxInput.value) || 3;
+        }
+        
+        // 更新角度
+        function updateAngle() {
+            AppState.angle = parseInt(angleSlider.value);
+            angleValue.textContent = `${AppState.angle}°`;
+            
+            // 更新正交复选框状态
+            if (AppState.angle === 90) {
+                orthogonalCheckbox.checked = true;
+            } else {
+                orthogonalCheckbox.checked = false;
+            }
+            
+            // 更新角度显示文本
+            if (AppState.angle === 90) {
+                currentAngle.textContent = "90° (正交)";
+            } else {
+                currentAngle.textContent = `${AppState.angle}°`;
+            }
+            
+            // 更新公式显示
+            if (AppState.angle === 90) {
+                orthoFormula.innerHTML = '<strong>正交轨线公式 (α=90°):</strong> y₂\' = -1 / y₁\'';
+            } else {
+                const alphaRad = AppState.angle * Math.PI / 180;
+                const tanAlpha = Math.tan(alphaRad).toFixed(3);
+                orthoFormula.innerHTML = `<strong>等角轨线公式 (α=${AppState.angle}°):</strong> y₂\' = (y₁\' + ${tanAlpha}) / (1 - y₁\'·${tanAlpha})`;
+            }
+        }
+        
+        // 切换正交模式
+        function toggleOrthogonal() {
+            if (orthogonalCheckbox.checked) {
+                angleSlider.value = 90;
+                updateAngle();
+            }
+        }
+        
+        // 更新X轴范围
+        function updateXRange() {
+            AppState.xMin = parseFloat(xMinInput.value) || -5;
+            AppState.xMax = parseFloat(xMaxInput.value) || 5;
+        }
+        
+        // 更新Y轴范围
+        function updateYRange() {
+            AppState.yMin = parseFloat(yMinInput.value) || -5;
+            AppState.yMax = parseFloat(yMaxInput.value) || 5;
+        }
+        
+        // 更新曲线密度
+        function updateCurveDensity() {
+            AppState.curveDensity = parseInt(curveDensitySlider.value);
+            curveDensityValue.textContent = AppState.curveDensity;
+        }
+        
+        // 更新等角轨线密度
+        function updateOrthoDensity() {
+            AppState.orthoDensity = parseInt(orthoDensitySlider.value);
+            orthoDensityValue.textContent = AppState.orthoDensity;
+        }
+        
+        // 更新视图控制
+        function updateViewControls() {
+            AppState.showCurves = showCurvesCheck.checked;
+            AppState.showOrtho = showOrthoCheck.checked;
+            AppState.showTangents = showTangentsCheck.checked;
+            AppState.showGrid = showGridCheck.checked;
+            drawAll();
+        }
+        
+        // 加载预设示例
+        function loadPreset(presetId) {
+            const preset = PresetExamples[presetId];
+            if (!preset) return;
+            
+            // 更新UI元素
+            curveFamilyInput.value = preset.equation;
+            paramMinInput.value = preset.paramRange.min;
+            paramMaxInput.value = preset.paramRange.max;
+            xMinInput.value = preset.xRange.min;
+            xMaxInput.value = preset.xRange.max;
+            yMinInput.value = preset.yRange.min;
+            yMaxInput.value = preset.yRange.max;
+            
+            // 更新应用状态
+            AppState.curveFamily = preset.equation;
+            AppState.paramMin = preset.paramRange.min;
+            AppState.paramMax = preset.paramRange.max;
+            AppState.xMin = preset.xRange.min;
+            AppState.xMax = preset.xRange.max;
+            AppState.yMin = preset.yRange.min;
+            AppState.yMax = preset.yRange.max;
+            AppState.currentPreset = presetId;
+            
+            // 更新预设按钮状态
+            presetButtons.forEach(btn => {
+                if (parseInt(btn.dataset.preset) === presetId) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+            
+            // 更新方程信息
+            updateEquationInfo();
+            
+            // 重新绘制
+            drawAll();
+        }
+        
+        // 更新方程信息
+        function updateEquationInfo() {
+            currentEquation.textContent = AppState.curveFamily;
+            
+            // 根据当前预设更新微分方程
+            const preset = PresetExamples[AppState.currentPreset];
+            if (preset) {
+                diffEquation.textContent = preset.diffEq;
+                orthoDiffEquation.textContent = preset.orthoDiffEq;
+            } else {
+                // 对于自定义方程，尝试计算微分方程
+                diffEquation.textContent = "需计算...";
+                orthoDiffEquation.textContent = "需计算...";
+            }
+        }
+        
+        // 处理鼠标移动
+        function handleMouseMove(e) {
+            const rect = mainCanvas.getBoundingClientRect();
+            AppState.canvasMouseX = e.clientX - rect.left;
+            AppState.canvasMouseY = e.clientY - rect.top;
+            
+            // 转换到数学坐标
+            AppState.mouseX = canvasToMathX(AppState.canvasMouseX);
+            AppState.mouseY = canvasToMathY(AppState.canvasMouseY);
+            
+            // 更新坐标信息
+            coordinateInfo.textContent = `鼠标位置: (${AppState.mouseX.toFixed(2)}, ${AppState.mouseY.toFixed(2)})`;
+            
+            // 重新绘制（包括切线）
+            drawAll();
+        }
+        
+        // 重置视图
+        function resetView() {
+            loadPreset(AppState.currentPreset);
+        }
+        
+        // 绘制所有内容
+        function drawAll() {
+            // 清除画布
+            ctx.clearRect(0, 0, mainCanvas.width, mainCanvas.height);
+            
+            // 绘制网格
+            if (AppState.showGrid) {
+                drawGrid();
+            }
+            
+            // 绘制坐标轴
+            drawAxes();
+            
+            // 绘制曲线族
+            if (AppState.showCurves) {
+                drawCurveFamily();
+            }
+            
+            // 绘制等角轨线
+            if (AppState.showOrtho) {
+                drawOrthogonalFamily();
+            }
+            
+            // 绘制切线验证
+            if (AppState.showTangents) {
+                drawTangentVerification();
+            }
+        }
+        
+        // 绘制网格
+        function drawGrid() {
+            ctx.strokeStyle = Colors.grid;
+            ctx.lineWidth = 0.5;
+            
+            // 水平网格线
+            for (let y = Math.ceil(AppState.yMin); y <= Math.floor(AppState.yMax); y++) {
+                if (y === 0) continue; // 跳过x轴
+                const canvasY = mathToCanvasY(y);
+                ctx.beginPath();
+                ctx.moveTo(0, canvasY);
+                ctx.lineTo(mainCanvas.width, canvasY);
+                ctx.stroke();
+            }
+            
+            // 垂直网格线
+            for (let x = Math.ceil(AppState.xMin); x <= Math.floor(AppState.xMax); x++) {
+                if (x === 0) continue; // 跳过y轴
+                const canvasX = mathToCanvasX(x);
+                ctx.beginPath();
+                ctx.moveTo(canvasX, 0);
+                ctx.lineTo(canvasX, mainCanvas.height);
+                ctx.stroke();
+            }
+        }
+        
+        // 绘制坐标轴
+        function drawAxes() {
+            ctx.strokeStyle = Colors.axis;
+            ctx.lineWidth = 1;
+            
+            // x轴
+            const canvasYZero = mathToCanvasY(0);
+            ctx.beginPath();
+            ctx.moveTo(0, canvasYZero);
+            ctx.lineTo(mainCanvas.width, canvasYZero);
+            ctx.stroke();
+            
+            // y轴
+            const canvasXZero = mathToCanvasX(0);
+            ctx.beginPath();
+            ctx.moveTo(canvasXZero, 0);
+            ctx.lineTo(canvasXZero, mainCanvas.height);
+            ctx.stroke();
+            
+            // 坐标轴标签
+            ctx.fillStyle = Colors.text;
+            ctx.font = '12px Arial';
+            ctx.textAlign = 'center';
+            
+            // x轴刻度
+            for (let x = Math.ceil(AppState.xMin); x <= Math.floor(AppState.xMax); x++) {
+                if (x === 0) continue;
+                const canvasX = mathToCanvasX(x);
+                ctx.beginPath();
+                ctx.moveTo(canvasX, canvasYZero - 5);
+                ctx.lineTo(canvasX, canvasYZero + 5);
+                ctx.stroke();
+                
+                ctx.fillText(x.toString(), canvasX, canvasYZero + 15);
+            }
+            
+            // y轴刻度
+            for (let y = Math.ceil(AppState.yMin); y <= Math.floor(AppState.yMax); y++) {
+                if (y === 0) continue;
+                const canvasY = mathToCanvasY(y);
+                ctx.beginPath();
+                ctx.moveTo(canvasXZero - 5, canvasY);
+                ctx.lineTo(canvasXZero + 5, canvasY);
+                ctx.stroke();
+                
+                ctx.save();
+                ctx.translate(canvasXZero - 15, canvasY);
+                ctx.rotate(-Math.PI/2);
+                ctx.textAlign = 'center';
+                ctx.fillText(y.toString(), 0, 0);
+                ctx.restore();
+            }
+            
+            // 原点标签
+            ctx.fillText("O", canvasXZero - 10, canvasYZero + 15);
+        }
+        
+        // 绘制曲线族
+        function drawCurveFamily() {
+            const preset = PresetExamples[AppState.currentPreset];
+            if (!preset) return;
+            
+            ctx.strokeStyle = Colors.curveFamily;
+            ctx.lineWidth = 1.5;
+            ctx.setLineDash([]);
+            
+            // 根据预设类型绘制曲线
+            if (preset.type === "explicit") {
+                drawExplicitCurveFamily(preset);
+            } else if (preset.type === "implicit") {
+                drawImplicitCurveFamily(preset);
+            }
+        }
+        
+        // 绘制显式曲线族
+        function drawExplicitCurveFamily(preset) {
+            const step = (AppState.paramMax - AppState.paramMin) / (AppState.curveDensity - 1);
+            
+            for (let i = 0; i < AppState.curveDensity; i++) {
+                const C = AppState.paramMin + i * step;
+                
+                ctx.beginPath();
+                let firstPoint = true;
+                
+                // 采样x值
+                for (let x = AppState.xMin; x <= AppState.xMax; x += 0.1) {
+                    let y;
+                    
+                    try {
+                        // 根据预设计算y值
+                        if (preset.equation.includes("y = C*x")) {
+                            y = C * x;
+                        } else if (preset.equation.includes("y = C*x^2")) {
+                            y = C * x * x;
+                        } else if (preset.equation.includes("y = C*e^x")) {
+                            y = C * Math.exp(x);
+                        } else {
+                            // 尝试解析简单表达式
+                            y = evalExpression(preset.equation, { x: x, C: C });
+                        }
+                    } catch (e) {
+                        continue;
+                    }
+                    
+                    // 检查y是否在范围内
+                    if (y < AppState.yMin || y > AppState.yMax) {
+                        if (!firstPoint) {
+                            ctx.stroke();
+                            ctx.beginPath();
+                            firstPoint = true;
+                        }
+                        continue;
+                    }
+                    
+                    const canvasX = mathToCanvasX(x);
+                    const canvasY = mathToCanvasY(y);
+                    
+                    if (firstPoint) {
+                        ctx.moveTo(canvasX, canvasY);
+                        firstPoint = false;
+                    } else {
+                        ctx.lineTo(canvasX, canvasY);
+                    }
+                }
+                
+                ctx.stroke();
+            }
+        }
+        
+        // 绘制隐式曲线族
+        function drawImplicitCurveFamily(preset) {
+            const step = (AppState.paramMax - AppState.paramMin) / (AppState.curveDensity - 1);
+            
+            for (let i = 0; i < AppState.curveDensity; i++) {
+                const C = AppState.paramMin + i * step;
+                
+                ctx.beginPath();
+                let firstPoint = true;
+                
+                // 对于隐式曲线，我们需要解方程 F(x,y)=C
+                // 这里我们采用参数化方法或直接绘制已知曲线
+                if (preset.equation.includes("x^2 + y^2 = C")) {
+                    // 同心圆：x² + y² = C
+                    if (C > 0) {
+                        const radius = Math.sqrt(C);
+                        drawCircle(0, 0, radius);
+                    }
+                } else if (preset.equation.includes("x*y = C")) {
+                    // 双曲线：xy = C
+                    drawHyperbola(C);
+                }
+            }
+        }
+        
+        // 绘制圆
+        function drawCircle(cx, cy, radius) {
+            const canvasCX = mathToCanvasX(cx);
+            const canvasCY = mathToCanvasY(cy);
+            
+            // 计算半径的像素长度
+            const radiusX = (radius / (AppState.xMax - AppState.xMin)) * mainCanvas.width;
+            const radiusY = (radius / (AppState.yMax - AppState.yMin)) * mainCanvas.height;
+            
+            ctx.beginPath();
+            ctx.ellipse(canvasCX, canvasCY, radiusX, radiusY, 0, 0, 2 * Math.PI);
+            ctx.stroke();
+        }
+        
+        // 绘制双曲线 xy = C
+        function drawHyperbola(C) {
+            if (C === 0) {
+                // xy = 0 是两条直线
+                ctx.beginPath();
+                ctx.moveTo(mathToCanvasX(AppState.xMin), mathToCanvasY(0));
+                ctx.lineTo(mathToCanvasX(AppState.xMax), mathToCanvasY(0));
+                ctx.stroke();
+                
+                ctx.beginPath();
+                ctx.moveTo(mathToCanvasX(0), mathToCanvasY(AppState.yMin));
+                ctx.lineTo(mathToCanvasX(0), mathToCanvasY(AppState.yMax));
+                ctx.stroke();
+                return;
+            }
+            
+            // 第一象限和第三象限的分支
+            ctx.beginPath();
+            let firstPoint = true;
+            
+            for (let x = 0.1; x <= AppState.xMax; x += 0.1) {
+                const y = C / x;
+                if (y < AppState.yMin || y > AppState.yMax) continue;
+                
+                const canvasX = mathToCanvasX(x);
+                const canvasY = mathToCanvasY(y);
+                
+                if (firstPoint) {
+                    ctx.moveTo(canvasX, canvasY);
+                    firstPoint = false;
+                } else {
+                    ctx.lineTo(canvasX, canvasY);
+                }
+            }
+            ctx.stroke();
+            
+            // 第二象限和第四象限的分支
+            ctx.beginPath();
+            firstPoint = true;
+            
+            for (let x = -0.1; x >= AppState.xMin; x -= 0.1) {
+                const y = C / x;
+                if (y < AppState.yMin || y > AppState.yMax) continue;
+                
+                const canvasX = mathToCanvasX(x);
+                const canvasY = mathToCanvasY(y);
+                
+                if (firstPoint) {
+                    ctx.moveTo(canvasX, canvasY);
+                    firstPoint = false;
+                } else {
+                    ctx.lineTo(canvasX, canvasY);
+                }
+            }
+            ctx.stroke();
+        }
+        
+        // 绘制等角轨线族
+        function drawOrthogonalFamily() {
+            const preset = PresetExamples[AppState.currentPreset];
+            if (!preset) return;
+            
+            ctx.strokeStyle = Colors.orthoFamily;
+            ctx.lineWidth = 1.5;
+            ctx.setLineDash([]);
+            
+            // 根据预设绘制等角轨线
+            if (preset.name.includes("直线族")) {
+                // 直线族的正交轨线是同心圆
+                drawOrthoForLineFamily();
+            } else if (preset.name.includes("同心圆族")) {
+                // 同心圆族的正交轨线是直线
+                drawOrthoForCircleFamily();
+            } else if (preset.name.includes("抛物线族")) {
+                // 抛物线族的正交轨线
+                drawOrthoForParabolaFamily();
+            } else if (preset.name.includes("指数曲线族")) {
+                // 指数曲线族的正交轨线
+                drawOrthoForExpFamily();
+            } else if (preset.name.includes("双曲线族")) {
+                // 双曲线族的正交轨线
+                drawOrthoForHyperbolaFamily();
+            }
+        }
+        
+        // 绘制直线族的正交轨线（同心圆）
+        function drawOrthoForLineFamily() {
+            const Kmin = 1;
+            const Kmax = 16;
+            const step = (Kmax - Kmin) / (AppState.orthoDensity - 1);
+            
+            for (let i = 0; i < AppState.orthoDensity; i++) {
+                const K = Kmin + i * step;
+                const radius = Math.sqrt(K);
+                drawCircle(0, 0, radius);
+            }
+        }
+        
+        // 绘制同心圆族的正交轨线（直线）
+        function drawOrthoForCircleFamily() {
+            const Kmin = -3;
+            const Kmax = 3;
+            const step = (Kmax - Kmin) / (AppState.orthoDensity - 1);
+            
+            for (let i = 0; i < AppState.orthoDensity; i++) {
+                const K = Kmin + i * step;
+                
+                ctx.beginPath();
+                const x1 = AppState.xMin;
+                const y1 = K * x1;
+                const x2 = AppState.xMax;
+                const y2 = K * x2;
+                
+                if (y1 >= AppState.yMin && y1 <= AppState.yMax && y2 >= AppState.yMin && y2 <= AppState.yMax) {
+                    ctx.moveTo(mathToCanvasX(x1), mathToCanvasY(y1));
+                    ctx.lineTo(mathToCanvasX(x2), mathToCanvasY(y2));
+                }
+                ctx.stroke();
+            }
+        }
+        
+        // 绘制抛物线族的正交轨线
+        function drawOrthoForParabolaFamily() {
+            const Kmin = 1;
+            const Kmax = 20;
+            const step = (Kmax - Kmin) / (AppState.orthoDensity - 1);
+            
+            for (let i = 0; i < AppState.orthoDensity; i++) {
+                const K = Kmin + i * step;
+                
+                ctx.beginPath();
+                let firstPoint = true;
+                
+                // 绘制椭圆 x² + 2y² = K
+                for (let angle = 0; angle <= 2 * Math.PI; angle += 0.05) {
+                    const x = Math.sqrt(K) * Math.cos(angle);
+                    const y = Math.sqrt(K/2) * Math.sin(angle);
+                    
+                    if (x < AppState.xMin || x > AppState.xMax || y < AppState.yMin || y > AppState.yMax) {
+                        if (!firstPoint) {
+                            ctx.stroke();
+                            ctx.beginPath();
+                            firstPoint = true;
+                        }
+                        continue;
+                    }
+                    
+                    const canvasX = mathToCanvasX(x);
+                    const canvasY = mathToCanvasY(y);
+                    
+                    if (firstPoint) {
+                        ctx.moveTo(canvasX, canvasY);
+                        firstPoint = false;
+                    } else {
+                        ctx.lineTo(canvasX, canvasY);
+                    }
+                }
+                ctx.stroke();
+            }
+        }
+        
+        // 绘制指数曲线族的正交轨线
+        function drawOrthoForExpFamily() {
+            const Kmin = -5;
+            const Kmax = 5;
+            const step = (Kmax - Kmin) / (AppState.orthoDensity - 1);
+            
+            for (let i = 0; i < AppState.orthoDensity; i++) {
+                const K = Kmin + i * step;
+                
+                ctx.beginPath();
+                let firstPoint = true;
+                
+                // 绘制曲线 y²/2 + x = K
+                for (let y = AppState.yMin; y <= AppState.yMax; y += 0.1) {
+                    const x = K - y*y/2;
+                    
+                    if (x < AppState.xMin || x > AppState.xMax) {
+                        if (!firstPoint) {
+                            ctx.stroke();
+                            ctx.beginPath();
+                            firstPoint = true;
+                        }
+                        continue;
+                    }
+                    
+                    const canvasX = mathToCanvasX(x);
+                    const canvasY = mathToCanvasY(y);
+                    
+                    if (firstPoint) {
+                        ctx.moveTo(canvasX, canvasY);
+                        firstPoint = false;
+                    } else {
+                        ctx.lineTo(canvasX, canvasY);
+                    }
+                }
+                ctx.stroke();
+            }
+        }
+        
+        // 绘制双曲线族的正交轨线
+        function drawOrthoForHyperbolaFamily() {
+            const Kmin = -4;
+            const Kmax = 4;
+            const step = (Kmax - Kmin) / (AppState.orthoDensity - 1);
+            
+            for (let i = 0; i < AppState.orthoDensity; i++) {
+                const K = Kmin + i * step;
+                
+                ctx.beginPath();
+                let firstPoint = true;
+                
+                // 绘制双曲线 y² - x² = K
+                for (let x = AppState.xMin; x <= AppState.xMax; x += 0.1) {
+                    const y1 = Math.sqrt(x*x + K);
+                    const y2 = -Math.sqrt(x*x + K);
+                    
+                    if (K + x*x >= 0) {
+                        if (y1 >= AppState.yMin && y1 <= AppState.yMax) {
+                            const canvasX = mathToCanvasX(x);
+                            const canvasY = mathToCanvasY(y1);
+                            
+                            if (firstPoint) {
+                                ctx.moveTo(canvasX, canvasY);
+                                firstPoint = false;
+                            } else {
+                                ctx.lineTo(canvasX, canvasY);
+                            }
+                        }
+                        
+                        if (y2 >= AppState.yMin && y2 <= AppState.yMax) {
+                            const canvasX = mathToCanvasX(x);
+                            const canvasY = mathToCanvasY(y2);
+                            
+                            if (firstPoint) {
+                                ctx.moveTo(canvasX, canvasY);
+                                firstPoint = false;
+                            } else {
+                                ctx.lineTo(canvasX, canvasY);
+                            }
+                        }
+                    }
+                }
+                ctx.stroke();
+            }
+        }
+        
+        // 绘制切线验证
+        function drawTangentVerification() {
+            const preset = PresetExamples[AppState.currentPreset];
+            if (!preset) return;
+            
+            const x = AppState.mouseX;
+            const y = AppState.mouseY;
+            
+            // 计算曲线族在(x,y)处的切线斜率
+            let slope1 = 0;
+            let existsOnCurve = false;
+            
+            try {
+                if (preset.name.includes("直线族")) {
+                    // 对于直线族 y = C*x，通过点(x,y)的直线参数C = y/x
+                    if (x !== 0) {
+                        const C = y / x;
+                        // 直线族的微分方程: y' = y/x
+                        slope1 = y / x;
+                        existsOnCurve = true;
+                    }
+                } else if (preset.name.includes("同心圆族")) {
+                    // 对于同心圆族 x² + y² = C
+                    const C = x*x + y*y;
+                    if (C > 0) {
+                        // 同心圆族的微分方程: y' = -x/y
+                        if (y !== 0) {
+                            slope1 = -x / y;
+                            existsOnCurve = true;
+                        }
+                    }
+                } else if (preset.name.includes("抛物线族")) {
+                    // 对于抛物线族 y = C*x²
+                    if (x !== 0) {
+                        const C = y / (x*x);
+                        // 抛物线族的微分方程: y' = 2y/x
+                        slope1 = 2 * y / x;
+                        existsOnCurve = true;
+                    }
+                } else if (preset.name.includes("指数曲线族")) {
+                    // 对于指数曲线族 y = C*e^x
+                    const C = y / Math.exp(x);
+                    // 指数曲线族的微分方程: y' = y
+                    slope1 = y;
+                    existsOnCurve = true;
+                } else if (preset.name.includes("双曲线族")) {
+                    // 对于双曲线族 xy = C
+                    const C = x * y;
+                    // 双曲线族的微分方程: y' = -y/x
+                    if (x !== 0) {
+                        slope1 = -y / x;
+                        existsOnCurve = true;
+                    }
+                }
+            } catch (e) {
+                // 计算斜率时出错
+                console.error("计算切线斜率时出错:", e);
+            }
+            
+            if (!existsOnCurve) return;
+            
+            // 计算等角轨线的切线斜率
+            const alphaRad = AppState.angle * Math.PI / 180;
+            let slope2 = 0;
+            
+            if (AppState.angle === 90) {
+                // 正交轨线: slope2 = -1/slope1
+                if (slope1 !== 0) {
+                    slope2 = -1 / slope1;
+                } else {
+                    // 如果slope1=0，正交轨线斜率为无穷大
+                    slope2 = Infinity;
+                }
+            } else {
+                // 等角轨线: tan(α) = (slope2 - slope1) / (1 + slope1*slope2)
+                const tanAlpha = Math.tan(alphaRad);
+                slope2 = (slope1 + tanAlpha) / (1 - slope1 * tanAlpha);
+            }
+            
+            // 绘制切线
+            ctx.strokeStyle = Colors.tangent;
+            ctx.lineWidth = 2;
+            ctx.setLineDash([]);
+            
+            const length = 40; // 切线长度（像素）
+            const canvasX = mathToCanvasX(x);
+            const canvasY = mathToCanvasY(y);
+            
+            // 曲线族的切线
+            if (Math.abs(slope1) < 1000) { // 避免斜率过大
+                const dx1 = length / Math.sqrt(1 + slope1 * slope1);
+                const dy1 = slope1 * dx1;
+                
+                ctx.beginPath();
+                ctx.moveTo(canvasX - dx1, canvasY - dy1);
+                ctx.lineTo(canvasX + dx1, canvasY + dy1);
+                ctx.stroke();
+            } else {
+                // 斜率接近无穷大，画垂直线
+                ctx.beginPath();
+                ctx.moveTo(canvasX, canvasY - length);
+                ctx.lineTo(canvasX, canvasY + length);
+                ctx.stroke();
+            }
+            
+            // 等角轨线的切线
+            if (Math.abs(slope2) < 1000) { // 避免斜率过大
+                const dx2 = length / Math.sqrt(1 + slope2 * slope2);
+                const dy2 = slope2 * dx2;
+                
+                ctx.setLineDash([5, 5]);
+                ctx.beginPath();
+                ctx.moveTo(canvasX - dx2, canvasY - dy2);
+                ctx.lineTo(canvasX + dx2, canvasY + dy2);
+                ctx.stroke();
+            } else {
+                // 斜率接近无穷大，画垂直线
+                ctx.setLineDash([5, 5]);
+                ctx.beginPath();
+                ctx.moveTo(canvasX, canvasY - length);
+                ctx.lineTo(canvasX, canvasY + length);
+                ctx.stroke();
+            }
+            
+            // 绘制交点
+            ctx.fillStyle = Colors.point;
+            ctx.beginPath();
+            ctx.arc(canvasX, canvasY, 4, 0, 2 * Math.PI);
+            ctx.fill();
+            
+            // 计算实际角度
+            let actualAngle = 0;
+            if (slope1 !== Infinity && slope2 !== Infinity) {
+                const angleRad = Math.atan(Math.abs((slope2 - slope1) / (1 + slope1 * slope2)));
+                actualAngle = Math.abs(angleRad * 180 / Math.PI);
+                
+                // 确保角度在0-180度之间
+                if (actualAngle > 90) {
+                    actualAngle = 180 - actualAngle;
+                }
+            } else if ((slope1 === Infinity && slope2 === 0) || (slope1 === 0 && slope2 === Infinity)) {
+                actualAngle = 90;
+            }
+            
+            // 显示角度信息
+            ctx.fillStyle = Colors.text;
+            ctx.font = '14px Arial';
+            ctx.textAlign = 'left';
+            ctx.fillText(`曲线族斜率: ${slope1.toFixed(2)}`, canvasX + 10, canvasY - 20);
+            ctx.fillText(`等角轨线斜率: ${slope2.toFixed(2)}`, canvasX + 10, canvasY);
+            ctx.fillText(`实际夹角: ${actualAngle.toFixed(1)}°`, canvasX + 10, canvasY + 20);
+        }
+        
+        // 数学坐标到画布坐标的转换
+        function mathToCanvasX(x) {
+            return ((x - AppState.xMin) / (AppState.xMax - AppState.xMin)) * mainCanvas.width;
+        }
+        
+        function mathToCanvasY(y) {
+            return mainCanvas.height - ((y - AppState.yMin) / (AppState.yMax - AppState.yMin)) * mainCanvas.height;
+        }
+        
+        // 画布坐标到数学坐标的转换
+        function canvasToMathX(canvasX) {
+            return AppState.xMin + (canvasX / mainCanvas.width) * (AppState.xMax - AppState.xMin);
+        }
+        
+        function canvasToMathY(canvasY) {
+            return AppState.yMin + ((mainCanvas.height - canvasY) / mainCanvas.height) * (AppState.yMax - AppState.yMin);
+        }
+        
+        // 安全地计算数学表达式
+        function evalExpression(expr, variables) {
+            // 简单替换变量并计算
+            let exprToEval = expr;
+            
+            // 替换变量
+            for (const [key, value] of Object.entries(variables)) {
+                exprToEval = exprToEval.replace(new RegExp(key, 'g'), value);
+            }
+            
+            // 替换数学函数和常数
+            exprToEval = exprToEval.replace(/sin\(/g, 'Math.sin(');
+            exprToEval = exprToEval.replace(/cos\(/g, 'Math.cos(');
+            exprToEval = exprToEval.replace(/tan\(/g, 'Math.tan(');
+            exprToEval = exprToEval.replace(/exp\(/g, 'Math.exp(');
+            exprToEval = exprToEval.replace(/log\(/g, 'Math.log(');
+            exprToEval = exprToEval.replace(/sqrt\(/g, 'Math.sqrt(');
+            exprToEval = exprToEval.replace(/pi/g, 'Math.PI');
+            exprToEval = exprToEval.replace(/e/g, 'Math.E');
+            
+            // 替换幂运算符
+            exprToEval = exprToEval.replace(/\^/g, '**');
+            
+            // 安全评估表达式
+            try {
+                return Function(`"use strict"; return (${exprToEval})`)();
+            } catch (e) {
+                console.error("表达式计算错误:", e);
+                return NaN;
+            }
+        }
+        
+        // 页面加载完成后初始化应用程序
+        window.addEventListener('DOMContentLoaded', initApp);
+    </script>
+</body>
+</html>
