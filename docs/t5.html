@@ -1,0 +1,1733 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>相平面、稳定性与线性化分析可视化工具</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/12.4.0/math.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1800px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #4a6fa5;
+        }
+        
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            color: #7f8c8d;
+            font-size: 1.1em;
+        }
+        
+        .main-content {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        
+        .left-panel {
+            flex: 1;
+            min-width: 350px;
+        }
+        
+        .right-panel {
+            flex: 3;
+            min-width: 1000px;
+        }
+        
+        .control-section {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            margin-bottom: 20px;
+        }
+        
+        .control-section h2 {
+            color: #3498db;
+            font-size: 1.2em;
+            margin-bottom: 15px;
+            border-left: 4px solid #3498db;
+            padding-left: 10px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        
+        input[type="text"], input[type="number"], select {
+            width: 100%;
+            padding: 10px 12px;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 1em;
+        }
+        
+        .range-inputs, .coord-inputs, .matrix-inputs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .range-inputs input, .coord-inputs input, .matrix-inputs input {
+            flex: 1;
+        }
+        
+        .checkbox-group {
+            margin-bottom: 15px;
+        }
+        
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        
+        .checkbox-item input {
+            margin-right: 8px;
+        }
+        
+        .slider-container {
+            margin-bottom: 20px;
+        }
+        
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+        }
+        
+        .slider-value {
+            font-weight: bold;
+            color: #e74c3c;
+        }
+        
+        input[type="range"] {
+            width: 100%;
+            height: 8px;
+            border-radius: 4px;
+            background: #ddd;
+            outline: none;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        button {
+            padding: 12px 20px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            flex: 1;
+        }
+        
+        button:hover {
+            background-color: #2980b9;
+        }
+        
+        button#startTrajectoryBtn {
+            background-color: #2ecc71;
+        }
+        
+        button#startTrajectoryBtn:hover {
+            background-color: #27ae60;
+        }
+        
+        button#clearTrajectoriesBtn {
+            background-color: #e74c3c;
+        }
+        
+        button#clearTrajectoriesBtn:hover {
+            background-color: #c0392b;
+        }
+        
+        button#findEquilibriaBtn {
+            background-color: #9b59b6;
+        }
+        
+        button#findEquilibriaBtn:hover {
+            background-color: #8e44ad;
+        }
+        
+        .example-buttons {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+            margin-top: 10px;
+        }
+        
+        .example-buttons button {
+            padding: 8px 10px;
+            font-size: 0.85em;
+        }
+        
+        .tab-container {
+            display: flex;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .tab {
+            padding: 12px 20px;
+            background-color: #f8f9fa;
+            border: none;
+            border-bottom: 3px solid transparent;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .tab:hover {
+            background-color: #e9ecef;
+        }
+        
+        .tab.active {
+            background-color: white;
+            border-bottom-color: #3498db;
+            color: #3498db;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .canvas-container {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            margin-bottom: 20px;
+        }
+        
+        #mainCanvas {
+            display: block;
+            background-color: #fff;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            cursor: crosshair;
+        }
+        
+        .info-panel {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+        
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .info-item {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            border-left: 4px solid #3498db;
+        }
+        
+        .info-item h3 {
+            margin-bottom: 5px;
+            font-size: 0.9em;
+            color: #7f8c8d;
+        }
+        
+        .info-item p {
+            font-size: 1.1em;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        
+        .eigenvalue-display {
+            background-color: #e8f4fc;
+            padding: 15px;
+            border-radius: 6px;
+            border-left: 4px solid #3498db;
+            margin-bottom: 15px;
+        }
+        
+        .eigenvalue-display h3 {
+            margin-bottom: 10px;
+            color: #2c3e50;
+        }
+        
+        .eigenvalue-item {
+            margin-bottom: 8px;
+        }
+        
+        .instructions {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #e8f4fc;
+            border-radius: 8px;
+            border-left: 4px solid #3498db;
+        }
+        
+        .instructions h3 {
+            margin-bottom: 10px;
+            color: #2c3e50;
+        }
+        
+        .instructions ul {
+            padding-left: 20px;
+        }
+        
+        .instructions li {
+            margin-bottom: 5px;
+        }
+        
+        footer {
+            text-align: center;
+            margin-top: 30px;
+            color: #95a5a6;
+            font-size: 0.9em;
+        }
+        
+        .status-display {
+            padding: 10px;
+            background-color: #fff3cd;
+            border-radius: 6px;
+            border: 1px solid #ffeaa7;
+            margin-bottom: 15px;
+        }
+        
+        .legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-top: 10px;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .legend-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 2px;
+        }
+        
+        .legend-text {
+            font-size: 0.85em;
+        }
+        
+        .equilibrium-list {
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #eee;
+            border-radius: 6px;
+            padding: 10px;
+            margin-top: 10px;
+        }
+        
+        .equilibrium-item {
+            padding: 8px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+        }
+        
+        .equilibrium-item:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .equilibrium-item.active {
+            background-color: #e8f4fc;
+            border-left: 4px solid #3498db;
+        }
+        
+        @media (max-width: 1200px) {
+            .main-content {
+                flex-direction: column;
+            }
+        }
+        
+        .matrix-display {
+            font-family: 'Courier New', monospace;
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid #ddd;
+            margin-bottom: 15px;
+        }
+        
+        .system-type {
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        
+        .stable-node { background-color: #2ecc71; color: white; }
+        .unstable-node { background-color: #e74c3c; color: white; }
+        .stable-focus { background-color: #3498db; color: white; }
+        .unstable-focus { background-color: #f39c12; color: white; }
+        .saddle { background-color: #9b59b6; color: white; }
+        .center { background-color: #1abc9c; color: white; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>相平面、稳定性与线性化分析可视化工具</h1>
+            <p class="subtitle">直观探索二维动力系统的相平面、稳定性和线性化分析 | 《常微分方程》第三章§3.5.3和第五章§5.4教学辅助工具</p>
+        </header>
+        
+        <div class="main-content">
+            <div class="left-panel">
+                <div class="control-section">
+                    <h2>1. 工作模式</h2>
+                    <div class="tab-container">
+                        <button class="tab active" id="linearTab">线性系统分析</button>
+                        <button class="tab" id="nonlinearTab">非线性系统线性化</button>
+                    </div>
+                </div>
+                
+                <div class="control-section">
+                    <div id="linearControls" class="tab-content active">
+                        <h2>2. 线性系统参数</h2>
+                        <label>系数矩阵 A = [[a₁₁, a₁₂], [a₂₁, a₂₂]]</label>
+                        <div class="matrix-inputs">
+                            <input type="number" id="a11" step="0.1" value="-0.5" placeholder="a₁₁">
+                            <input type="number" id="a12" step="0.1" value="1" placeholder="a₁₂">
+                        </div>
+                        <div class="matrix-inputs">
+                            <input type="number" id="a21" step="0.1" value="-1" placeholder="a₂₁">
+                            <input type="number" id="a22" step="0.1" value="-0.5" placeholder="a₂₂">
+                        </div>
+                        
+                        <label>预设系统类型：</label>
+                        <div class="example-buttons">
+                            <button class="preset" data-a11="-2" data-a12="0" data-a21="0" data-a22="-1">稳定结点</button>
+                            <button class="preset" data-a11="2" data-a12="0" data-a21="0" data-a22="1">不稳定结点</button>
+                            <button class="preset" data-a11="-0.5" data-a12="1" data-a21="-1" data-a22="-0.5">稳定焦点</button>
+                            <button class="preset" data-a11="0.5" data-a12="1" data-a21="-1" data-a22="0.5">不稳定焦点</button>
+                            <button class="preset" data-a11="1" data-a12="0" data-a21="0" data-a22="-1">鞍点</button>
+                            <button class="preset" data-a11="0" data-a12="1" data-a21="-1" data-a22="0">中心</button>
+                            <button class="preset" data-a11="-1" data-a12="1" data-a21="0" data-a22="-1">退化结点</button>
+                            <button class="preset" data-a11="-1" data-a12="0" data-a21="0" data-a22="-1">临界结点</button>
+                        </div>
+                    </div>
+                    
+                    <div id="nonlinearControls" class="tab-content">
+                        <h2>2. 非线性系统参数</h2>
+                        <label>系统方程：dx/dt = P(x, y), dy/dt = Q(x, y)</label>
+                        <input type="text" id="PInput" value="y" placeholder="例如：y, x - x^3/3 - y">
+                        <input type="text" id="QInput" value="-x - 0.3*y" placeholder="例如：-x - 0.3*y, (x + 0.8*y - 0.7)/3">
+                        
+                        <label>预设示例：</label>
+                        <select id="nonlinearExampleSelect" class="example-select">
+                            <option value="example1">示例1: 阻尼振动 (P=y, Q=-x-0.3y)</option>
+                            <option value="example2">示例2: 非线性振子 (P=x-x³/3-y, Q=(x+0.8y-0.7)/3)</option>
+                            <option value="example3">示例3: 极限环 (P=y+x*(1-x²-y²), Q=-x+y*(1-x²-y²))</option>
+                            <option value="example4">示例4: 竞争模型 (P=x*(1-x-0.5y), Q=y*(0.75-0.5x-y))</option>
+                            <option value="example5">示例5: 捕食者-被捕食者 (P=x*(1-x)-x*y, Q=-0.5*y+x*y)</option>
+                        </select>
+                        
+                        <label>绘图区域范围：</label>
+                        <div class="range-inputs">
+                            <input type="number" id="nonlinearXmin" step="0.5" value="-3" placeholder="x_min">
+                            <input type="number" id="nonlinearXmax" step="0.5" value="3" placeholder="x_max">
+                        </div>
+                        <div class="range-inputs">
+                            <input type="number" id="nonlinearYmin" step="0.5" value="-3" placeholder="y_min">
+                            <input type="number" id="nonlinearYmax" step="0.5" value="3" placeholder="y_max">
+                        </div>
+                        
+                        <div class="button-group">
+                            <button id="findEquilibriaBtn">计算平衡点</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="control-section">
+                    <h2>3. 视图控制参数</h2>
+                    <div class="slider-container">
+                        <div class="slider-label">
+                            <span>向量场密度</span>
+                            <span id="densityValue" class="slider-value">20</span>
+                        </div>
+                        <input type="range" id="densitySlider" min="10" max="40" step="2" value="20">
+                    </div>
+                    
+                    <div class="slider-container">
+                        <div class="slider-label">
+                            <span>轨线积分时间</span>
+                            <span id="timeValue" class="slider-value">5</span>
+                        </div>
+                        <input type="range" id="timeSlider" min="1" max="20" step="1" value="5">
+                    </div>
+                    
+                    <div class="slider-container">
+                        <div class="slider-label">
+                            <span>向量场缩放</span>
+                            <span id="scaleValue" class="slider-value">0.5</span>
+                        </div>
+                        <input type="range" id="scaleSlider" min="0.1" max="1" step="0.1" value="0.5">
+                    </div>
+                    
+                    <div class="checkbox-group">
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="showVectorField" checked>
+                            <label for="showVectorField">显示向量场</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="showEigenvectors" checked>
+                            <label for="showEigenvectors">显示特征向量</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="showTrajectories" checked>
+                            <label for="showTrajectories">显示轨线</label>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="control-section">
+                    <h2>4. 交互控制</h2>
+                    <div class="button-group">
+                        <button id="startTrajectoryBtn">开始绘制轨线</button>
+                        <button id="clearTrajectoriesBtn">清除所有轨线</button>
+                    </div>
+                    
+                    <div id="nonlinearEquilibria" style="display: none;">
+                        <h3 style="margin-top: 15px; margin-bottom: 10px; color: #2c3e50;">平衡点列表：</h3>
+                        <div class="equilibrium-list" id="equilibriumList">
+                            <!-- 平衡点列表将通过JavaScript动态生成 -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="right-panel">
+                <div class="canvas-container">
+                    <canvas id="mainCanvas" width="1000" height="600"></canvas>
+                </div>
+                
+                <div class="info-panel">
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <h3>工作模式</h3>
+                            <p id="currentMode">线性系统分析</p>
+                        </div>
+                        <div class="info-item">
+                            <h3>鼠标位置 (x, y)</h3>
+                            <p id="mousePos">(0.00, 0.00)</p>
+                        </div>
+                        <div class="info-item">
+                            <h3>当前向量 (dx/dt, dy/dt)</h3>
+                            <p id="currentVector">(0.00, 0.00)</p>
+                        </div>
+                        <div class="info-item">
+                            <h3>系统类型</h3>
+                            <p id="systemType"><span class="system-type stable-focus">稳定焦点</span></p>
+                        </div>
+                    </div>
+                    
+                    <div class="eigenvalue-display" id="eigenvalueInfo">
+                        <h3>特征值信息：</h3>
+                        <div class="eigenvalue-item"><strong>特征值 λ₁:</strong> <span id="lambda1">-0.5 ± 1.0i</span></div>
+                        <div class="eigenvalue-item"><strong>特征值 λ₂:</strong> <span id="lambda2">-0.5 ∓ 1.0i</span></div>
+                        <div class="eigenvalue-item"><strong>特征向量 v₁:</strong> <span id="eigenvector1">(0.71, -0.71)</span></div>
+                        <div class="eigenvalue-item"><strong>特征向量 v₂:</strong> <span id="eigenvector2">(0.71, 0.71)</span></div>
+                        <div class="eigenvalue-item"><strong>稳定性:</strong> <span id="stability">稳定</span></div>
+                    </div>
+                    
+                    <div id="nonlinearEigenvalueInfo" class="eigenvalue-display" style="display: none;">
+                        <h3>线性化系统信息：</h3>
+                        <div class="eigenvalue-item"><strong>平衡点:</strong> <span id="equilibriumPoint">(0.00, 0.00)</span></div>
+                        <div class="eigenvalue-item"><strong>雅可比矩阵:</strong> <span id="jacobianMatrix">[[-0.5, 1], [-1, -0.5]]</span></div>
+                        <div class="eigenvalue-item"><strong>特征值 λ₁:</strong> <span id="nonlinearLambda1">-0.5 ± 1.0i</span></div>
+                        <div class="eigenvalue-item"><strong>特征值 λ₂:</strong> <span id="nonlinearLambda2">-0.5 ∓ 1.0i</span></div>
+                        <div class="eigenvalue-item"><strong>平衡点类型:</strong> <span id="equilibriumType">稳定焦点</span></div>
+                    </div>
+                    
+                    <div class="status-display" id="statusDisplay">
+                        <strong>当前状态：</strong> 点击"开始绘制轨线"按钮，然后在画布上点击绘制轨线
+                    </div>
+                    
+                    <div class="legend">
+                        <div class="legend-item">
+                            <div class="legend-color" style="background-color: #3498db"></div>
+                            <div class="legend-text">向量场</div>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background-color: #e74c3c"></div>
+                            <div class="legend-text">平衡点</div>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background-color: #2ecc71"></div>
+                            <div class="legend-text">轨线 (正向)</div>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background-color: #f39c12"></div>
+                            <div class="legend-text">轨线 (反向)</div>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background-color: #9b59b6"></div>
+                            <div class="legend-text">特征向量</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="instructions">
+                    <h3>使用说明</h3>
+                    <ul>
+                        <li><strong>线性系统分析</strong>：调整系数矩阵元素，观察特征值和相图变化。点击预设按钮查看典型系统。</li>
+                        <li><strong>非线性系统线性化</strong>：输入非线性系统方程，计算平衡点，在平衡点附近进行线性化分析。</li>
+                        <li><strong>绘制轨线</strong>：点击"开始绘制轨线"按钮，然后在画布上点击任意点绘制从该点出发的轨线。</li>
+                        <li><strong>向量场控制</strong>：通过滑块调整向量场密度、缩放和轨线积分时间。</li>
+                        <li><strong>教学重点</strong>：理解特征值与系统稳定性的关系，掌握非线性系统线性化方法。</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <footer>
+            <p>相平面、稳定性与线性化分析可视化工具 | 《常微分方程》教学辅助工具 | 基于 HTML5 Canvas 与 JavaScript 实现</p>
+        </footer>
+    </div>
+
+    <script>
+	// 检查用户是否已登录
+if (sessionStorage.getItem("allow") !== "ok") {
+    window.location.href = "index.html";
+}
+        // 主应用程序状态和配置
+        const AppState = {
+            // 工作模式
+            mode: 'linear', // 'linear' 或 'nonlinear'
+            
+            // 线性系统参数
+            a11: -0.5,
+            a12: 1,
+            a21: -1,
+            a22: -0.5,
+            
+            // 非线性系统参数
+            P: null,
+            Q: null,
+            nonlinearXMin: -3,
+            nonlinearXMax: 3,
+            nonlinearYMin: -3,
+            nonlinearYMax: 3,
+            
+            // 视图变换
+            viewOffsetX: 0,
+            viewOffsetY: 0,
+            viewScale: 1,
+            
+            // 交互状态
+            isDragging: false,
+            lastMouseX: 0,
+            lastMouseY: 0,
+            mouseDownX: 0,
+            mouseDownY: 0,
+            dragThreshold: 5,
+            
+            // 绘图参数
+            density: 20,
+            integrationTime: 5,
+            vectorScale: 0.5,
+            
+            // 显示控制
+            showVectorField: true,
+            showEigenvectors: true,
+            showTrajectories: true,
+            
+            // 轨线绘制状态
+            isDrawingTrajectories: false,
+            trajectories: [], // 存储已绘制的轨线
+            
+            // 非线性系统平衡点
+            equilibria: [],
+            selectedEquilibrium: null,
+            
+            // 当前鼠标信息
+            mouseX: 0,
+            mouseY: 0,
+            mouseLogicalX: 0,
+            mouseLogicalY: 0
+        };
+
+        // DOM 元素引用
+        const canvas = document.getElementById('mainCanvas');
+        const ctx = canvas.getContext('2d');
+        const linearTab = document.getElementById('linearTab');
+        const nonlinearTab = document.getElementById('nonlinearTab');
+        const linearControls = document.getElementById('linearControls');
+        const nonlinearControls = document.getElementById('nonlinearControls');
+        const a11Input = document.getElementById('a11');
+        const a12Input = document.getElementById('a12');
+        const a21Input = document.getElementById('a21');
+        const a22Input = document.getElementById('a22');
+        const presetButtons = document.querySelectorAll('.preset');
+        const PInput = document.getElementById('PInput');
+        const QInput = document.getElementById('QInput');
+        const nonlinearExampleSelect = document.getElementById('nonlinearExampleSelect');
+        const nonlinearXminInput = document.getElementById('nonlinearXmin');
+        const nonlinearXmaxInput = document.getElementById('nonlinearXmax');
+        const nonlinearYminInput = document.getElementById('nonlinearYmin');
+        const nonlinearYmaxInput = document.getElementById('nonlinearYmax');
+        const findEquilibriaBtn = document.getElementById('findEquilibriaBtn');
+        const densitySlider = document.getElementById('densitySlider');
+        const densityValue = document.getElementById('densityValue');
+        const timeSlider = document.getElementById('timeSlider');
+        const timeValue = document.getElementById('timeValue');
+        const scaleSlider = document.getElementById('scaleSlider');
+        const scaleValue = document.getElementById('scaleValue');
+        const showVectorFieldCheck = document.getElementById('showVectorField');
+        const showEigenvectorsCheck = document.getElementById('showEigenvectors');
+        const showTrajectoriesCheck = document.getElementById('showTrajectories');
+        const startTrajectoryBtn = document.getElementById('startTrajectoryBtn');
+        const clearTrajectoriesBtn = document.getElementById('clearTrajectoriesBtn');
+        const nonlinearEquilibriaDiv = document.getElementById('nonlinearEquilibria');
+        const equilibriumList = document.getElementById('equilibriumList');
+        const currentModeSpan = document.getElementById('currentMode');
+        const mousePosSpan = document.getElementById('mousePos');
+        const currentVectorSpan = document.getElementById('currentVector');
+        const systemTypeSpan = document.getElementById('systemType');
+        const eigenvalueInfo = document.getElementById('eigenvalueInfo');
+        const nonlinearEigenvalueInfo = document.getElementById('nonlinearEigenvalueInfo');
+        const equilibriumPointSpan = document.getElementById('equilibriumPoint');
+        const jacobianMatrixSpan = document.getElementById('jacobianMatrix');
+        const nonlinearLambda1Span = document.getElementById('nonlinearLambda1');
+        const nonlinearLambda2Span = document.getElementById('nonlinearLambda2');
+        const equilibriumTypeSpan = document.getElementById('equilibriumType');
+        const lambda1Span = document.getElementById('lambda1');
+        const lambda2Span = document.getElementById('lambda2');
+        const eigenvector1Span = document.getElementById('eigenvector1');
+        const eigenvector2Span = document.getElementById('eigenvector2');
+        const stabilitySpan = document.getElementById('stability');
+        const statusDisplay = document.getElementById('statusDisplay');
+
+        // 颜色方案
+        const Colors = {
+            vectorField: '#3498db',
+            equilibrium: '#e74c3c',
+            trajectoryForward: '#2ecc71',
+            trajectoryBackward: '#f39c12',
+            eigenvector: '#9b59b6',
+            grid: '#e0e0e0',
+            axis: '#000',
+            highlight: '#e74c3c'
+        };
+
+        // 核心函数：安全地解析和计算数学表达式
+        function createFunctionFromExpression(expr) {
+            expr = expr.replace(/\^/g, '**');
+            try {
+                const compiled = math.compile(expr);
+                return function(x, y) {
+                    try {
+                        return compiled.evaluate({x: x, y: y});
+                    } catch (err) {
+                        return NaN;
+                    }
+                };
+            } catch (err) {
+                console.error("表达式解析失败:", err.message);
+                alert(`表达式解析错误：${err.message}。请检查数学表达式。`);
+                return (x, y) => 0;
+            }
+        }
+
+        // 线性系统：dx/dt = a11*x + a12*y, dy/dt = a21*x + a22*y
+        function linearSystem(x, y) {
+            const dx = AppState.a11 * x + AppState.a12 * y;
+            const dy = AppState.a21 * x + AppState.a22 * y;
+            return {dx, dy};
+        }
+
+        // 非线性系统：dx/dt = P(x,y), dy/dt = Q(x,y)
+        function nonlinearSystem(x, y) {
+            if (!AppState.P || !AppState.Q) {
+                return {dx: 0, dy: 0};
+            }
+            
+            const dx = AppState.P(x, y);
+            const dy = AppState.Q(x, y);
+            return {dx, dy};
+        }
+
+        // 获取当前系统函数
+        function getCurrentSystem() {
+            return AppState.mode === 'linear' ? linearSystem : nonlinearSystem;
+        }
+
+        // 四阶龙格-库塔法
+        function rungeKutta4Step(f, x, y, h) {
+            const k1 = f(x, y);
+            const k1x = k1.dx, k1y = k1.dy;
+            
+            const k2 = f(x + h/2 * k1x, y + h/2 * k1y);
+            const k2x = k2.dx, k2y = k2.dy;
+            
+            const k3 = f(x + h/2 * k2x, y + h/2 * k2y);
+            const k3x = k3.dx, k3y = k3.dy;
+            
+            const k4 = f(x + h * k3x, y + h * k3y);
+            const k4x = k4.dx, k4y = k4.dy;
+            
+            const xNew = x + h/6 * (k1x + 2*k2x + 2*k3x + k4x);
+            const yNew = y + h/6 * (k1y + 2*k2y + 2*k3y + k4y);
+            
+            return {x: xNew, y: yNew};
+        }
+
+        // 计算线性系统的特征值和特征向量
+        function computeEigenvaluesAndVectors() {
+            const a = AppState.a11, b = AppState.a12, c = AppState.a21, d = AppState.a22;
+            
+            // 计算迹和行列式
+            const trace = a + d;
+            const det = a * d - b * c;
+            
+            // 计算判别式
+            const discriminant = trace * trace - 4 * det;
+            
+            let lambda1, lambda2, v1, v2, systemType, stability;
+            
+            if (discriminant >= 0) {
+                // 实特征值
+                const sqrtDisc = Math.sqrt(discriminant);
+                lambda1 = (trace + sqrtDisc) / 2;
+                lambda2 = (trace - sqrtDisc) / 2;
+                
+                // 计算特征向量
+                if (Math.abs(b) > 1e-10) {
+                    v1 = {x: 1, y: (lambda1 - a) / b};
+                    v2 = {x: 1, y: (lambda2 - a) / b};
+                } else if (Math.abs(c) > 1e-10) {
+                    v1 = {x: (lambda1 - d) / c, y: 1};
+                    v2 = {x: (lambda2 - d) / c, y: 1};
+                } else {
+                    v1 = {x: 1, y: 0};
+                    v2 = {x: 0, y: 1};
+                }
+                
+                // 归一化特征向量
+                const norm1 = Math.sqrt(v1.x*v1.x + v1.y*v1.y);
+                const norm2 = Math.sqrt(v2.x*v2.x + v2.y*v2.y);
+                v1 = {x: v1.x/norm1, y: v1.y/norm1};
+                v2 = {x: v2.x/norm2, y: v2.y/norm2};
+                
+                // 判断系统类型
+                if (lambda1 * lambda2 < 0) {
+                    systemType = "鞍点";
+                    stability = "不稳定";
+                } else if (lambda1 < 0 && lambda2 < 0) {
+                    if (Math.abs(lambda1 - lambda2) < 1e-10) {
+                        systemType = "临界结点";
+                    } else {
+                        systemType = "稳定结点";
+                    }
+                    stability = "稳定";
+                } else if (lambda1 > 0 && lambda2 > 0) {
+                    if (Math.abs(lambda1 - lambda2) < 1e-10) {
+                        systemType = "临界结点";
+                    } else {
+                        systemType = "不稳定结点";
+                    }
+                    stability = "不稳定";
+                } else if (Math.abs(lambda1) < 1e-10 || Math.abs(lambda2) < 1e-10) {
+                    systemType = "退化结点";
+                    stability = "临界";
+                } else {
+                    systemType = "结点";
+                    stability = lambda1 < 0 ? "稳定" : "不稳定";
+                }
+            } else {
+                // 复特征值
+                const realPart = trace / 2;
+                const imagPart = Math.sqrt(-discriminant) / 2;
+                lambda1 = `${realPart.toFixed(2)} + ${Math.abs(imagPart).toFixed(2)}i`;
+                lambda2 = `${realPart.toFixed(2)} - ${Math.abs(imagPart).toFixed(2)}i`;
+                
+                v1 = {x: 1, y: 0};
+                v2 = {x: 0, y: 1};
+                
+                if (Math.abs(realPart) < 1e-10) {
+                    systemType = "中心";
+                    stability = "临界稳定";
+                } else if (realPart < 0) {
+                    systemType = "稳定焦点";
+                    stability = "稳定";
+                } else {
+                    systemType = "不稳定焦点";
+                    stability = "不稳定";
+                }
+            }
+            
+            return {lambda1, lambda2, v1, v2, systemType, stability};
+        }
+
+        // 坐标转换函数
+        function logicalToCanvas(lx, ly) {
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const x = centerX + (lx - AppState.viewOffsetX) * 50 * AppState.viewScale;
+            const y = centerY - (ly - AppState.viewOffsetY) * 50 * AppState.viewScale;
+            return {x, y};
+        }
+        
+        function canvasToLogical(cx, cy) {
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const lx = (cx - centerX) / (50 * AppState.viewScale) + AppState.viewOffsetX;
+            const ly = (centerY - cy) / (50 * AppState.viewScale) + AppState.viewOffsetY;
+            return {x: lx, y: ly};
+        }
+
+        // 绘图函数
+        function drawGridAndAxes() {
+            ctx.save();
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            ctx.translate(centerX, centerY);
+            ctx.scale(1, -1);
+            ctx.scale(50 * AppState.viewScale, 50 * AppState.viewScale);
+            ctx.translate(-AppState.viewOffsetX, -AppState.viewOffsetY);
+            
+            const logicalWidth = canvas.width / (50 * AppState.viewScale);
+            const logicalHeight = canvas.height / (50 * AppState.viewScale);
+            const left = AppState.viewOffsetX - logicalWidth / 2;
+            const right = AppState.viewOffsetX + logicalWidth / 2;
+            const bottom = AppState.viewOffsetY - logicalHeight / 2;
+            const top = AppState.viewOffsetY + logicalHeight / 2;
+            
+            // 绘制网格
+            ctx.strokeStyle = Colors.grid;
+            ctx.lineWidth = 1 / (50 * AppState.viewScale);
+            ctx.beginPath();
+            
+            const xStart = Math.ceil(left);
+            const xEnd = Math.floor(right);
+            for (let x = xStart; x <= xEnd; x++) {
+                ctx.moveTo(x, bottom);
+                ctx.lineTo(x, top);
+            }
+            
+            const yStart = Math.ceil(bottom);
+            const yEnd = Math.floor(top);
+            for (let y = yStart; y <= yEnd; y++) {
+                ctx.moveTo(left, y);
+                ctx.lineTo(right, y);
+            }
+            ctx.stroke();
+            
+            // 绘制坐标轴
+            ctx.strokeStyle = Colors.axis;
+            ctx.lineWidth = 2 / (50 * AppState.viewScale);
+            ctx.beginPath();
+            ctx.moveTo(left, 0);
+            ctx.lineTo(right, 0);
+            ctx.moveTo(0, bottom);
+            ctx.lineTo(0, top);
+            ctx.stroke();
+            
+            ctx.restore();
+            
+            // 绘制坐标轴标签
+            drawAxisLabels();
+        }
+        
+        function drawAxisLabels() {
+            ctx.save();
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
+            
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const logicalWidth = canvas.width / (50 * AppState.viewScale);
+            const logicalHeight = canvas.height / (50 * AppState.viewScale);
+            
+            const left = AppState.viewOffsetX - logicalWidth / 2;
+            const right = AppState.viewOffsetX + logicalWidth / 2;
+            const bottom = AppState.viewOffsetY - logicalHeight / 2;
+            const top = AppState.viewOffsetY + logicalHeight / 2;
+            
+            ctx.font = '12px Arial';
+            ctx.fillStyle = Colors.axis;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'top';
+            
+            const xTickStart = Math.ceil(left);
+            const xTickEnd = Math.floor(right);
+            for (let x = xTickStart; x <= xTickEnd; x++) {
+                if (Math.abs(x) > 0.01) {
+                    const canvasPos = logicalToCanvas(x, 0);
+                    ctx.fillText(x.toString(), canvasPos.x, canvasPos.y + 5);
+                }
+            }
+            
+            ctx.textAlign = 'right';
+            ctx.textBaseline = 'middle';
+            const yTickStart = Math.ceil(bottom);
+            const yTickEnd = Math.floor(top);
+            for (let y = yTickStart; y <= yTickEnd; y++) {
+                if (Math.abs(y) > 0.01) {
+                    const canvasPos = logicalToCanvas(0, y);
+                    ctx.fillText(y.toString(), canvasPos.x - 5, canvasPos.y);
+                }
+            }
+            
+            ctx.textAlign = 'left';
+            ctx.textBaseline = 'top';
+            const originPos = logicalToCanvas(0, 0);
+            ctx.fillText('O', originPos.x + 5, originPos.y + 5);
+            
+            ctx.restore();
+        }
+        
+        function drawVectorField() {
+            if (!AppState.showVectorField) return;
+            
+            ctx.save();
+            
+            const system = getCurrentSystem();
+            const gridSize = AppState.density;
+            
+            // 获取当前逻辑坐标范围
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const logicalWidth = canvas.width / (50 * AppState.viewScale);
+            const logicalHeight = canvas.height / (50 * AppState.viewScale);
+            const left = AppState.viewOffsetX - logicalWidth / 2;
+            const right = AppState.viewOffsetX + logicalWidth / 2;
+            const bottom = AppState.viewOffsetY - logicalHeight / 2;
+            const top = AppState.viewOffsetY + logicalHeight / 2;
+            
+            const dx = (right - left) / gridSize;
+            const dy = (top - bottom) / gridSize;
+            
+            ctx.strokeStyle = Colors.vectorField;
+            ctx.lineWidth = 2;
+            ctx.lineCap = 'round';
+            
+            for (let i = 0; i <= gridSize; i++) {
+                for (let j = 0; j <= gridSize; j++) {
+                    const x = left + i * dx;
+                    const y = bottom + j * dy;
+                    
+                    const vector = system(x, y);
+                    const dxdt = vector.dx;
+                    const dydt = vector.dy;
+                    
+                    // 计算箭头长度和方向
+                    const length = Math.sqrt(dxdt*dxdt + dydt*dydt);
+                    if (length < 1e-6) continue;
+                    
+                    const scale = 0.3 * AppState.vectorScale;
+                    const arrowLength = scale * Math.min(dx, dy) * length / (1 + length);
+                    const angle = Math.atan2(dydt, dxdt);
+                    
+                    const canvasPos = logicalToCanvas(x, y);
+                    const arrowTipX = canvasPos.x + arrowLength * Math.cos(angle);
+                    const arrowTipY = canvasPos.y - arrowLength * Math.sin(angle);
+                    
+                    // 绘制箭头
+                    ctx.beginPath();
+                    ctx.moveTo(canvasPos.x, canvasPos.y);
+                    ctx.lineTo(arrowTipX, arrowTipY);
+                    ctx.stroke();
+                    
+                    // 绘制箭头头部
+                    const headLength = 5;
+                    const headAngle = Math.PI / 6;
+                    
+                    ctx.beginPath();
+                    ctx.moveTo(arrowTipX, arrowTipY);
+                    ctx.lineTo(
+                        arrowTipX - headLength * Math.cos(angle - headAngle),
+                        arrowTipY + headLength * Math.sin(angle - headAngle)
+                    );
+                    ctx.lineTo(
+                        arrowTipX - headLength * Math.cos(angle + headAngle),
+                        arrowTipY + headLength * Math.sin(angle + headAngle)
+                    );
+                    ctx.closePath();
+                    ctx.fillStyle = Colors.vectorField;
+                    ctx.fill();
+                }
+            }
+            
+            ctx.restore();
+        }
+        
+        function drawEquilibria() {
+            if (AppState.mode === 'linear') {
+                // 线性系统只有一个平衡点在原点
+                ctx.save();
+                const origin = logicalToCanvas(0, 0);
+                ctx.fillStyle = Colors.equilibrium;
+                ctx.beginPath();
+                ctx.arc(origin.x, origin.y, 5, 0, 2 * Math.PI);
+                ctx.fill();
+                ctx.restore();
+            } else {
+                // 非线性系统可能有多个平衡点
+                AppState.equilibria.forEach((eq, index) => {
+                    ctx.save();
+                    const point = logicalToCanvas(eq.x, eq.y);
+                    ctx.fillStyle = Colors.equilibrium;
+                    ctx.beginPath();
+                    ctx.arc(point.x, point.y, 5, 0, 2 * Math.PI);
+                    ctx.fill();
+                    
+                    // 如果是选中的平衡点，绘制一个圆圈
+                    if (eq === AppState.selectedEquilibrium) {
+                        ctx.strokeStyle = Colors.highlight;
+                        ctx.lineWidth = 2;
+                        ctx.beginPath();
+                        ctx.arc(point.x, point.y, 10, 0, 2 * Math.PI);
+                        ctx.stroke();
+                    }
+                    ctx.restore();
+                });
+            }
+        }
+        
+        function drawEigenvectors() {
+            if (!AppState.showEigenvectors || AppState.mode !== 'linear') return;
+            
+            const {v1, v2} = computeEigenvaluesAndVectors();
+            
+            ctx.save();
+            ctx.strokeStyle = Colors.eigenvector;
+            ctx.lineWidth = 2;
+            ctx.setLineDash([5, 5]);
+            
+            // 绘制特征向量方向线
+            const origin = logicalToCanvas(0, 0);
+            const scale = 3;
+            
+            // 第一个特征向量
+            const v1End = logicalToCanvas(scale * v1.x, scale * v1.y);
+            ctx.beginPath();
+            ctx.moveTo(origin.x, origin.y);
+            ctx.lineTo(v1End.x, v1End.y);
+            ctx.stroke();
+            
+            // 第二个特征向量
+            const v2End = logicalToCanvas(scale * v2.x, scale * v2.y);
+            ctx.beginPath();
+            ctx.moveTo(origin.x, origin.y);
+            ctx.lineTo(v2End.x, v2End.y);
+            ctx.stroke();
+            
+            ctx.setLineDash([]);
+            ctx.restore();
+        }
+        
+        function drawTrajectories() {
+            if (!AppState.showTrajectories) return;
+            
+            const system = getCurrentSystem();
+            const h = 0.05; // 积分步长
+            
+            AppState.trajectories.forEach(trajectory => {
+                ctx.save();
+                ctx.strokeStyle = trajectory.forward ? Colors.trajectoryForward : Colors.trajectoryBackward;
+                ctx.lineWidth = 2;
+                ctx.lineJoin = 'round';
+                ctx.lineCap = 'round';
+                ctx.beginPath();
+                
+                const firstPoint = logicalToCanvas(trajectory.points[0].x, trajectory.points[0].y);
+                ctx.moveTo(firstPoint.x, firstPoint.y);
+                
+                for (let i = 1; i < trajectory.points.length; i++) {
+                    const point = logicalToCanvas(trajectory.points[i].x, trajectory.points[i].y);
+                    ctx.lineTo(point.x, point.y);
+                }
+                
+                ctx.stroke();
+                ctx.restore();
+            });
+        }
+        
+        function computeTrajectory(x0, y0, forward = true) {
+            const system = getCurrentSystem();
+            const h = forward ? 0.05 : -0.05;
+            const maxSteps = Math.abs(AppState.integrationTime / h);
+            
+            const points = [{x: x0, y: y0}];
+            let x = x0;
+            let y = y0;
+            
+            for (let i = 0; i < maxSteps; i++) {
+                const newPoint = rungeKutta4Step(system, x, y, h);
+                x = newPoint.x;
+                y = newPoint.y;
+                points.push({x, y});
+                
+                // 如果超出合理范围，停止积分
+                if (Math.abs(x) > 100 || Math.abs(y) > 100 || isNaN(x) || isNaN(y)) {
+                    break;
+                }
+            }
+            
+            return {points, forward};
+        }
+        
+        function redrawAll() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawGridAndAxes();
+            drawVectorField();
+            drawEquilibria();
+            drawEigenvectors();
+            drawTrajectories();
+        }
+        
+        function switchMode(mode) {
+            AppState.mode = mode;
+            currentModeSpan.textContent = mode === 'linear' ? '线性系统分析' : '非线性系统线性化';
+            
+            linearTab.classList.toggle('active', mode === 'linear');
+            nonlinearTab.classList.toggle('active', mode === 'nonlinear');
+            linearControls.classList.toggle('active', mode === 'linear');
+            nonlinearControls.classList.toggle('active', mode === 'nonlinear');
+            
+            if (mode === 'linear') {
+                eigenvalueInfo.style.display = 'block';
+                nonlinearEigenvalueInfo.style.display = 'none';
+                nonlinearEquilibriaDiv.style.display = 'none';
+                updateLinearSystemInfo();
+            } else {
+                eigenvalueInfo.style.display = 'none';
+                nonlinearEigenvalueInfo.style.display = 'block';
+                nonlinearEquilibriaDiv.style.display = 'block';
+            }
+            
+            redrawAll();
+        }
+        
+        function updateLinearSystem() {
+            AppState.a11 = parseFloat(a11Input.value);
+            AppState.a12 = parseFloat(a12Input.value);
+            AppState.a21 = parseFloat(a21Input.value);
+            AppState.a22 = parseFloat(a22Input.value);
+            updateLinearSystemInfo();
+            redrawAll();
+        }
+        
+        function updateLinearSystemInfo() {
+            const {lambda1, lambda2, v1, v2, systemType, stability} = computeEigenvaluesAndVectors();
+            
+            lambda1Span.textContent = lambda1;
+            lambda2Span.textContent = lambda2;
+            eigenvector1Span.textContent = `(${v1.x.toFixed(2)}, ${v1.y.toFixed(2)})`;
+            eigenvector2Span.textContent = `(${v2.x.toFixed(2)}, ${v2.y.toFixed(2)})`;
+            stabilitySpan.textContent = stability;
+            
+            // 更新系统类型显示
+            systemTypeSpan.innerHTML = `<span class="system-type ${getSystemTypeClass(systemType)}">${systemType}</span>`;
+            
+            // 更新状态显示
+            statusDisplay.innerHTML = `<strong>当前状态：</strong> ${systemType} (${stability})`;
+        }
+        
+        function getSystemTypeClass(systemType) {
+            switch(systemType) {
+                case '稳定结点':
+                case '临界结点':
+                    return 'stable-node';
+                case '不稳定结点':
+                    return 'unstable-node';
+                case '稳定焦点':
+                    return 'stable-focus';
+                case '不稳定焦点':
+                    return 'unstable-focus';
+                case '鞍点':
+                    return 'saddle';
+                case '中心':
+                    return 'center';
+                default:
+                    return 'stable-node';
+            }
+        }
+        
+        function updateNonlinearSystem() {
+            const PExpr = PInput.value.trim();
+            const QExpr = QInput.value.trim();
+            
+            try {
+                AppState.P = createFunctionFromExpression(PExpr);
+                AppState.Q = createFunctionFromExpression(QExpr);
+                redrawAll();
+            } catch (err) {
+                alert("非线性系统方程解析错误：" + err.message);
+            }
+        }
+        
+        function updateNonlinearPlotRange() {
+            AppState.nonlinearXMin = parseFloat(nonlinearXminInput.value);
+            AppState.nonlinearXMax = parseFloat(nonlinearXmaxInput.value);
+            AppState.nonlinearYMin = parseFloat(nonlinearYminInput.value);
+            AppState.nonlinearYMax = parseFloat(nonlinearYmaxInput.value);
+            redrawAll();
+        }
+        
+        function findEquilibria() {
+            if (!AppState.P || !AppState.Q) {
+                alert("请先输入非线性系统方程");
+                return;
+            }
+            
+            AppState.equilibria = [];
+            
+            // 简化方法：在区域内网格搜索
+            const gridSize = 20;
+            const dx = (AppState.nonlinearXMax - AppState.nonlinearXMin) / gridSize;
+            const dy = (AppState.nonlinearYMax - AppState.nonlinearYMin) / gridSize;
+            
+            for (let i = 0; i <= gridSize; i++) {
+                for (let j = 0; j <= gridSize; j++) {
+                    const x = AppState.nonlinearXMin + i * dx;
+                    const y = AppState.nonlinearYMin + j * dy;
+                    
+                    const Pval = AppState.P(x, y);
+                    const Qval = AppState.Q(x, y);
+                    
+                    // 检查是否接近零
+                    if (Math.abs(Pval) < 0.1 && Math.abs(Qval) < 0.1) {
+                        // 用牛顿法精确定位
+                        const eq = newtonMethod(x, y);
+                        if (eq && !isNaN(eq.x) && !isNaN(eq.y)) {
+                            // 检查是否已存在相近的平衡点
+                            let isNew = true;
+                            for (const existing of AppState.equilibria) {
+                                const dist = Math.sqrt((existing.x - eq.x)**2 + (existing.y - eq.y)**2);
+                                if (dist < 0.1) {
+                                    isNew = false;
+                                    break;
+                                }
+                            }
+                            if (isNew) {
+                                AppState.equilibria.push(eq);
+                            }
+                        }
+                    }
+                }
+            }
+            
+            updateEquilibriumList();
+            redrawAll();
+        }
+        
+        function newtonMethod(x0, y0) {
+            const maxIterations = 100;
+            const tolerance = 1e-6;
+            let x = x0;
+            let y = y0;
+            
+            for (let i = 0; i < maxIterations; i++) {
+                const Pval = AppState.P(x, y);
+                const Qval = AppState.Q(x, y);
+                
+                if (Math.abs(Pval) < tolerance && Math.abs(Qval) < tolerance) {
+                    return {x, y};
+                }
+                
+                // 计算雅可比矩阵
+                const h = 1e-6;
+                const Px = (AppState.P(x + h, y) - AppState.P(x - h, y)) / (2 * h);
+                const Py = (AppState.P(x, y + h) - AppState.P(x, y - h)) / (2 * h);
+                const Qx = (AppState.Q(x + h, y) - AppState.Q(x - h, y)) / (2 * h);
+                const Qy = (AppState.Q(x, y + h) - AppState.Q(x, y - h)) / (2 * h);
+                
+                const det = Px * Qy - Py * Qx;
+                if (Math.abs(det) < 1e-10) break;
+                
+                // 牛顿法迭代
+                const dx = (Py * Qval - Qy * Pval) / det;
+                const dy = (Qx * Pval - Px * Qval) / det;
+                
+                x -= dx;
+                y -= dy;
+            }
+            
+            return {x, y};
+        }
+        
+        function updateEquilibriumList() {
+            equilibriumList.innerHTML = '';
+            
+            if (AppState.equilibria.length === 0) {
+                equilibriumList.innerHTML = '<p style="color:#666; text-align:center; padding:20px;">未找到平衡点</p>';
+                return;
+            }
+            
+            AppState.equilibria.forEach((eq, index) => {
+                const div = document.createElement('div');
+                div.className = 'equilibrium-item';
+                if (eq === AppState.selectedEquilibrium) {
+                    div.classList.add('active');
+                }
+                div.innerHTML = `
+                    <strong>平衡点 ${index+1}:</strong> (${eq.x.toFixed(3)}, ${eq.y.toFixed(3)})
+                `;
+                div.addEventListener('click', () => {
+                    selectEquilibrium(eq);
+                });
+                equilibriumList.appendChild(div);
+            });
+        }
+        
+        function selectEquilibrium(eq) {
+            AppState.selectedEquilibrium = eq;
+            updateEquilibriumList();
+            
+            // 计算雅可比矩阵
+            const h = 1e-6;
+            const x = eq.x, y = eq.y;
+            
+            const Px = (AppState.P(x + h, y) - AppState.P(x - h, y)) / (2 * h);
+            const Py = (AppState.P(x, y + h) - AppState.P(x, y - h)) / (2 * h);
+            const Qx = (AppState.Q(x + h, y) - AppState.Q(x - h, y)) / (2 * h);
+            const Qy = (AppState.Q(x, y + h) - AppState.Q(x, y - h)) / (2 * h);
+            
+            const jacobian = [[Px, Py], [Qx, Qy]];
+            
+            // 计算特征值
+            const trace = Px + Qy;
+            const det = Px * Qy - Py * Qx;
+            const discriminant = trace * trace - 4 * det;
+            
+            let lambda1, lambda2, systemType;
+            
+            if (discriminant >= 0) {
+                const sqrtDisc = Math.sqrt(discriminant);
+                lambda1 = (trace + sqrtDisc) / 2;
+                lambda2 = (trace - sqrtDisc) / 2;
+                
+                if (lambda1 * lambda2 < 0) {
+                    systemType = "鞍点";
+                } else if (lambda1 < 0 && lambda2 < 0) {
+                    systemType = "稳定结点";
+                } else if (lambda1 > 0 && lambda2 > 0) {
+                    systemType = "不稳定结点";
+                } else {
+                    systemType = "结点";
+                }
+            } else {
+                const realPart = trace / 2;
+                const imagPart = Math.sqrt(-discriminant) / 2;
+                lambda1 = `${realPart.toFixed(2)} + ${Math.abs(imagPart).toFixed(2)}i`;
+                lambda2 = `${realPart.toFixed(2)} - ${Math.abs(imagPart).toFixed(2)}i`;
+                
+                if (Math.abs(realPart) < 1e-10) {
+                    systemType = "中心";
+                } else if (realPart < 0) {
+                    systemType = "稳定焦点";
+                } else {
+                    systemType = "不稳定焦点";
+                }
+            }
+            
+            // 更新显示
+            equilibriumPointSpan.textContent = `(${eq.x.toFixed(3)}, ${eq.y.toFixed(3)})`;
+            jacobianMatrixSpan.textContent = `[[${Px.toFixed(3)}, ${Py.toFixed(3)}], [${Qx.toFixed(3)}, ${Qy.toFixed(3)}]]`;
+            nonlinearLambda1Span.textContent = lambda1;
+            nonlinearLambda2Span.textContent = lambda2;
+            equilibriumTypeSpan.innerHTML = `<span class="system-type ${getSystemTypeClass(systemType)}">${systemType}</span>`;
+            
+            redrawAll();
+        }
+        
+        function startDrawingTrajectories() {
+            AppState.isDrawingTrajectories = true;
+            startTrajectoryBtn.disabled = true;
+            startTrajectoryBtn.textContent = "绘制中...";
+            statusDisplay.innerHTML = `<strong>当前状态：</strong> 在画布上点击绘制轨线，再次点击按钮停止`;
+        }
+        
+        function stopDrawingTrajectories() {
+            AppState.isDrawingTrajectories = false;
+            startTrajectoryBtn.disabled = false;
+            startTrajectoryBtn.textContent = "开始绘制轨线";
+            statusDisplay.innerHTML = `<strong>当前状态：</strong> 点击"开始绘制轨线"按钮，然后在画布上点击绘制轨线`;
+        }
+        
+        function clearTrajectories() {
+            AppState.trajectories = [];
+            redrawAll();
+        }
+        
+        function updateViewFromInputs() {
+            const xMin = -3;
+            const xMax = 3;
+            const yMin = -3;
+            const yMax = 3;
+            
+            AppState.viewOffsetX = (xMin + xMax) / 2;
+            AppState.viewOffsetY = (yMin + yMax) / 2;
+            const scaleX = canvas.width / ((xMax - xMin) * 50);
+            const scaleY = canvas.height / ((yMax - yMin) * 50);
+            AppState.viewScale = Math.min(scaleX, scaleY) * 0.9;
+            
+            redrawAll();
+        }
+
+        // 事件监听
+        linearTab.addEventListener('click', () => switchMode('linear'));
+        nonlinearTab.addEventListener('click', () => switchMode('nonlinear'));
+        
+        a11Input.addEventListener('change', updateLinearSystem);
+        a12Input.addEventListener('change', updateLinearSystem);
+        a21Input.addEventListener('change', updateLinearSystem);
+        a22Input.addEventListener('change', updateLinearSystem);
+        
+        presetButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                a11Input.value = btn.dataset.a11;
+                a12Input.value = btn.dataset.a12;
+                a21Input.value = btn.dataset.a21;
+                a22Input.value = btn.dataset.a22;
+                updateLinearSystem();
+            });
+        });
+        
+        PInput.addEventListener('change', updateNonlinearSystem);
+        QInput.addEventListener('change', updateNonlinearSystem);
+        
+        nonlinearExampleSelect.addEventListener('change', () => {
+            const example = nonlinearExampleSelect.value;
+            if (example === 'example1') {
+                PInput.value = 'y';
+                QInput.value = '-x - 0.3*y';
+            } else if (example === 'example2') {
+                PInput.value = 'x - x^3/3 - y';
+                QInput.value = '(x + 0.8*y - 0.7)/3';
+            } else if (example === 'example3') {
+                PInput.value = 'y + x*(1 - x^2 - y^2)';
+                QInput.value = '-x + y*(1 - x^2 - y^2)';
+            } else if (example === 'example4') {
+                PInput.value = 'x*(1 - x - 0.5*y)';
+                QInput.value = 'y*(0.75 - 0.5*x - y)';
+            } else if (example === 'example5') {
+                PInput.value = 'x*(1 - x) - x*y';
+                QInput.value = '-0.5*y + x*y';
+            }
+            updateNonlinearSystem();
+        });
+        
+        nonlinearXminInput.addEventListener('change', updateNonlinearPlotRange);
+        nonlinearXmaxInput.addEventListener('change', updateNonlinearPlotRange);
+        nonlinearYminInput.addEventListener('change', updateNonlinearPlotRange);
+        nonlinearYmaxInput.addEventListener('change', updateNonlinearPlotRange);
+        
+        findEquilibriaBtn.addEventListener('click', findEquilibria);
+        
+        densitySlider.addEventListener('input', () => {
+            AppState.density = parseInt(densitySlider.value);
+            densityValue.textContent = AppState.density;
+            redrawAll();
+        });
+        
+        timeSlider.addEventListener('input', () => {
+            AppState.integrationTime = parseInt(timeSlider.value);
+            timeValue.textContent = AppState.integrationTime;
+        });
+        
+        scaleSlider.addEventListener('input', () => {
+            AppState.vectorScale = parseFloat(scaleSlider.value);
+            scaleValue.textContent = AppState.vectorScale.toFixed(1);
+            redrawAll();
+        });
+        
+        showVectorFieldCheck.addEventListener('change', () => {
+            AppState.showVectorField = showVectorFieldCheck.checked;
+            redrawAll();
+        });
+        
+        showEigenvectorsCheck.addEventListener('change', () => {
+            AppState.showEigenvectors = showEigenvectorsCheck.checked;
+            redrawAll();
+        });
+        
+        showTrajectoriesCheck.addEventListener('change', () => {
+            AppState.showTrajectories = showTrajectoriesCheck.checked;
+            redrawAll();
+        });
+        
+        startTrajectoryBtn.addEventListener('click', () => {
+            if (AppState.isDrawingTrajectories) {
+                stopDrawingTrajectories();
+            } else {
+                startDrawingTrajectories();
+            }
+        });
+        
+        clearTrajectoriesBtn.addEventListener('click', clearTrajectories);
+        
+        // 鼠标事件
+        canvas.addEventListener('mousedown', (e) => {
+            AppState.isDragging = false;
+            AppState.lastMouseX = e.clientX;
+            AppState.lastMouseY = e.clientY;
+            AppState.mouseDownX = e.clientX;
+            AppState.mouseDownY = e.clientY;
+            canvas.style.cursor = 'grabbing';
+        });
+        
+        canvas.addEventListener('mousemove', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+            const logicalPos = canvasToLogical(mouseX, mouseY);
+            
+            // 更新鼠标位置显示
+            AppState.mouseX = mouseX;
+            AppState.mouseY = mouseY;
+            AppState.mouseLogicalX = logicalPos.x;
+            AppState.mouseLogicalY = logicalPos.y;
+            
+            mousePosSpan.textContent = `(${logicalPos.x.toFixed(2)}, ${logicalPos.y.toFixed(2)})`;
+            
+            // 更新向量显示
+            const system = getCurrentSystem();
+            const vector = system(logicalPos.x, logicalPos.y);
+            currentVectorSpan.textContent = `(${vector.dx.toFixed(2)}, ${vector.dy.toFixed(2)})`;
+            
+            // 检查是否在拖拽
+            if (AppState.mouseDownX !== 0 && AppState.mouseDownY !== 0) {
+                const deltaX = Math.abs(e.clientX - AppState.mouseDownX);
+                const deltaY = Math.abs(e.clientY - AppState.mouseDownY);
+                const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+                
+                if (distance > AppState.dragThreshold) {
+                    AppState.isDragging = true;
+                }
+            }
+            
+            if (AppState.isDragging) {
+                const deltaX = e.clientX - AppState.lastMouseX;
+                const deltaY = e.clientY - AppState.lastMouseY;
+                AppState.viewOffsetX -= deltaX / (50 * AppState.viewScale);
+                AppState.viewOffsetY += deltaY / (50 * AppState.viewScale);
+                AppState.lastMouseX = e.clientX;
+                AppState.lastMouseY = e.clientY;
+                redrawAll();
+            }
+        });
+        
+        canvas.addEventListener('mouseup', (e) => {
+            if (!AppState.isDragging) {
+                // 如果是点击（没有拖拽）
+                const rect = canvas.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                const logicalPos = canvasToLogical(x, y);
+                
+                if (AppState.isDrawingTrajectories) {
+                    // 绘制轨线
+                    const forwardTrajectory = computeTrajectory(logicalPos.x, logicalPos.y, true);
+                    const backwardTrajectory = computeTrajectory(logicalPos.x, logicalPos.y, false);
+                    
+                    AppState.trajectories.push(forwardTrajectory);
+                    AppState.trajectories.push(backwardTrajectory);
+                    
+                    redrawAll();
+                } else if (AppState.mode === 'nonlinear') {
+                    // 检查是否点击了平衡点
+                    for (const eq of AppState.equilibria) {
+                        const eqPos = logicalToCanvas(eq.x, eq.y);
+                        const dist = Math.sqrt((eqPos.x - x)**2 + (eqPos.y - y)**2);
+                        if (dist < 10) {
+                            selectEquilibrium(eq);
+                            return;
+                        }
+                    }
+                }
+            }
+            
+            AppState.isDragging = false;
+            AppState.mouseDownX = 0;
+            AppState.mouseDownY = 0;
+            canvas.style.cursor = 'crosshair';
+        });
+        
+        canvas.addEventListener('mouseleave', () => {
+            AppState.isDragging = false;
+            AppState.mouseDownX = 0;
+            AppState.mouseDownY = 0;
+            canvas.style.cursor = 'crosshair';
+        });
+        
+        canvas.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+            const logicalPosBefore = canvasToLogical(mouseX, mouseY);
+            const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
+            AppState.viewScale *= zoomFactor;
+            const logicalPosAfter = canvasToLogical(mouseX, mouseY);
+            AppState.viewOffsetX += logicalPosBefore.x - logicalPosAfter.x;
+            AppState.viewOffsetY += logicalPosBefore.y - logicalPosAfter.y;
+            redrawAll();
+        });
+
+        // 初始化
+        function init() {
+            // 设置初始值
+            densityValue.textContent = densitySlider.value;
+            timeValue.textContent = timeSlider.value;
+            scaleValue.textContent = scaleSlider.value;
+            
+            // 设置初始系统
+            updateLinearSystem();
+            updateNonlinearSystem();
+            
+            // 设置初始视图
+            updateViewFromInputs();
+        }
+        
+        // 启动应用
+        window.onload = init;
+    </script>
+</body>
+</html>
