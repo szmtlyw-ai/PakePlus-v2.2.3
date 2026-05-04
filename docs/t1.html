@@ -1,0 +1,932 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>一阶方程线素场与积分曲线绘制器</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/12.4.0/math.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        body {
+            margin: 20px;
+            padding: 0;
+            background-color: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
+        }
+        header {
+            text-align: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #4a6fa5;
+        }
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+        .subtitle {
+            color: #7f8c8d;
+            font-size: 0.95em;
+        }
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 25px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        .control-panel {
+            flex: 1;
+            min-width: 300px;
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+        }
+        .control-section {
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #eee;
+        }
+        .control-section:last-of-type {
+            border-bottom: none;
+            margin-bottom: 0;
+        }
+        h2 {
+            color: #3498db;
+            font-size: 1.3em;
+            margin-top: 0;
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        input[type="text"], select, .range-inputs {
+            width: 100%;
+            padding: 12px 15px;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: border 0.3s;
+        }
+        input[type="text"]:focus, select:focus {
+            border-color: #3498db;
+            outline: none;
+        }
+        .range-inputs {
+            display: flex;
+            gap: 10px;
+            padding: 0;
+            border: none;
+        }
+        .range-inputs input {
+            flex: 1;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        .slider-container {
+            margin-bottom: 20px;
+        }
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+        }
+        .slider-value {
+            font-weight: bold;
+            color: #e74c3c;
+        }
+        input[type="range"] {
+            width: 100%;
+            height: 8px;
+            border-radius: 4px;
+            background: #ddd;
+            outline: none;
+        }
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        button {
+            flex: 1;
+            padding: 14px 20px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        button:active {
+            transform: scale(0.98);
+        }
+        button#clearCurves {
+            background-color: #e74c3c;
+        }
+        button#clearCurves:hover {
+            background-color: #c0392b;
+        }
+        .checkbox-group {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+        }
+        .checkbox-item input {
+            margin-right: 10px;
+            transform: scale(1.2);
+        }
+        .visualization-panel {
+            flex: 2;
+            min-width: 600px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .canvas-container {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+            position: relative;
+        }
+        #mainCanvas {
+            display: block;
+            background-color: #fff;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            cursor: crosshair;
+        }
+        .info-panel {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+        }
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+        .info-item {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #3498db;
+        }
+        .info-item h3 {
+            margin-top: 0;
+            margin-bottom: 8px;
+            font-size: 1em;
+            color: #7f8c8d;
+        }
+        .info-item p {
+            margin: 0;
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #2c3e50;
+            word-break: break-all;
+        }
+        .instructions {
+            margin-top: 25px;
+            padding: 20px;
+            background-color: #e8f4fc;
+            border-radius: 8px;
+            border-left: 4px solid #3498db;
+            font-size: 0.95em;
+        }
+        .instructions h3 {
+            margin-top: 0;
+            color: #2c3e50;
+        }
+        .instructions ul {
+            margin-bottom: 0;
+            padding-left: 20px;
+        }
+        .instructions li {
+            margin-bottom: 8px;
+        }
+        .instructions kbd {
+            background-color: #f1f1f1;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+            padding: 2px 6px;
+            font-family: monospace;
+        }
+        footer {
+            text-align: center;
+            margin-top: 30px;
+            color: #95a5a6;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>一阶方程线素场与积分曲线绘制器</h1>
+        <p class="subtitle">直观探索 dy/dx = f(x, y) 的几何意义 | 教材辅助工具 | 《常微分方程》几何解释</p>
+    </header>
+
+    <div class="container">
+        <div class="control-panel">
+            <div class="control-section">
+                <h2>1. 方程设置</h2>
+                <label for="equationInput">微分方程 dy/dx = f(x, y)：</label>
+                <input type="text" id="equationInput" value="x+y" placeholder="例如：y/x, x*y, sin(x)+y">
+                <label for="presetSelect">预设教学方程：</label>
+                <select id="presetSelect">
+                    <option value="y/x">齐次方程：y/x</option>
+                    <option value="x*y">可分离变量：x * y</option>
+                    <option value="x+y" selected>一阶线性：x + y</option>
+                    <option value="y^2-1">y^2 - 1</option>
+                    <option value="sin(x*y)">sin(x * y)</option>
+                    <option value="1/(x^2+y^2+1)">1/(x^2 + y^2 + 1)</option>
+                    <option value="-x/y">-x / y (圆心在原点的一族圆)</option>
+                </select>
+            </div>
+
+            <div class="control-section">
+                <h2>2. 绘图区域范围</h2>
+                <label>X轴范围：</label>
+                <div class="range-inputs">
+                    <input type="number" id="xmin" step="0.5" value="-5">
+                    <input type="number" id="xmax" step="0.5" value="5">
+                </div>
+                <label>Y轴范围：</label>
+                <div class="range-inputs">
+                    <input type="number" id="ymin" step="0.5" value="-5">
+                    <input type="number" id="ymax" step="0.5" value="5">
+                </div>
+                <button id="updateView">更新视图与线素场</button>
+            </div>
+
+            <div class="control-section">
+                <h2>3. 参数控制</h2>
+                <div class="slider-container">
+                    <div class="slider-label">
+                        <span>线素场密度</span>
+                        <span id="densityValue" class="slider-value">20</span>
+                    </div>
+                    <input type="range" id="densitySlider" min="10" max="30" step="1" value="20">
+                </div>
+                <div class="slider-container">
+                    <div class="slider-label">
+                        <span>积分步长 (RK4)</span>
+                        <span id="stepValue" class="slider-value">0.05</span>
+                    </div>
+                    <input type="range" id="stepSlider" min="0.01" max="0.2" step="0.01" value="0.05">
+                </div>
+            </div>
+
+            <div class="control-section">
+                <h2>4. 视图控制</h2>
+                <div class="checkbox-group">
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="showField" checked>
+                        <label for="showField">显示线素场</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="showGrid" checked>
+                        <label for="showGrid">显示坐标网格</label>
+                    </div>
+                </div>
+                <div class="button-group">
+                    <button id="zoomIn">放大</button>
+                    <button id="zoomOut">缩小</button>
+                    <button id="resetView">重置视图</button>
+                </div>
+            </div>
+
+            <div class="control-section">
+                <h2>5. 探索操作</h2>
+                <p style="margin-top:0; color:#666;">在右侧画布上点击，将以点击点为初值绘制积分曲线。</p>
+                <div class="button-group">
+                    <button id="clearCurves">清除所有积分曲线</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="visualization-panel">
+            <div class="canvas-container">
+                <canvas id="mainCanvas" width="800" height="600">
+                    您的浏览器不支持HTML5 Canvas。
+                </canvas>
+            </div>
+
+            <div class="info-panel">
+                <div class="info-grid">
+                    <div class="info-item">
+                        <h3>当前方程</h3>
+                        <p id="currentEquation">dy/dx = x+y</p>
+                    </div>
+                    <div class="info-item">
+                        <h3>鼠标位置 (x, y)</h3>
+                        <p id="mousePos">(0.00, 0.00)</p>
+                    </div>
+                    <div class="info-item">
+                        <h3>鼠标处斜率 f(x, y)</h3>
+                        <p id="currentSlope">0.00</p>
+                    </div>
+                    <div class="info-item">
+                        <h3>已绘制积分曲线</h3>
+                        <p id="curveCount">0 条</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="instructions">
+                <h3>使用说明</h3>
+                <ul>
+                    <li><strong>绘制积分曲线</strong>：在画布上任意位置点击，将从该点（初值）出发，用四阶龙格-库塔法数值求解并绘制积分曲线（蓝色）。最多可同时绘制10条。</li>
+                    <li><strong>视图控制</strong>：使用鼠标<strong>拖拽</strong>平移视图，<strong>滚轮</strong>缩放视图，或使用下方的控制按钮。</li>
+                    <li><strong>表达式语法</strong>：支持 +, -, *, /, ^(幂), sin, cos, tan, exp, log, sqrt, abs 等函数。例如：<kbd>sin(x)+y^2</kbd>。</li>
+                    <li><strong>教学提示</strong>：观察积分曲线如何与线素场的"小线段"方向相切，直观理解"解曲线顺应方向场"的几何思想。</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p>一阶方程线素场与积分曲线绘制器 | 常微分方程教学辅助工具 | 基于 HTML5 Canvas 与 JavaScript 实现</p>
+    </footer>
+
+    <script>
+	// 检查用户是否已登录
+if (sessionStorage.getItem("allow") !== "ok") {
+    window.location.href = "index.html";
+}
+        // 主应用程序状态和配置
+        const AppState = {
+            // 绘图设置
+            xMin: -5,
+            xMax: 5,
+            yMin: -5,
+            yMax: 5,
+            density: 20, // 线素场网格密度 (N x N)
+            rkStep: 0.05, // RK4积分步长
+            showField: true,
+            showGrid: true,
+
+            // 视图变换状态 (用于平移和缩放)
+            viewOffsetX: 0,
+            viewOffsetY: 0,
+            viewScale: 1, // 缩放因子，1表示1个逻辑单位对应50像素
+
+            // 交互状态
+            isDragging: false,
+            lastMouseX: 0,
+            lastMouseY: 0,
+            mouseDownX: 0,
+            mouseDownY: 0,
+            dragThreshold: 5, // 拖拽阈值（像素），小于此值为点击，大于此值为拖拽
+
+            // 数据存储
+            curves: [], // 存储所有积分曲线的点数组 {points: [[x,y],...], color: '...'}
+            maxCurves: 10,
+            curveColors: [
+                '#3498db', '#e74c3c', '#2ecc71', '#f39c12', '#9b59b6',
+                '#1abc9c', '#d35400', '#c0392b', '#16a085', '#8e44ad'
+            ],
+
+            // 当前方程函数
+            currentFunc: (x, y) => x + y
+        };
+
+        // DOM 元素引用
+        const canvas = document.getElementById('mainCanvas');
+        const ctx = canvas.getContext('2d');
+        const equationInput = document.getElementById('equationInput');
+        const presetSelect = document.getElementById('presetSelect');
+        const xminInput = document.getElementById('xmin');
+        const xmaxInput = document.getElementById('xmax');
+        const yminInput = document.getElementById('ymin');
+        const ymaxInput = document.getElementById('ymax');
+        const updateViewBtn = document.getElementById('updateView');
+        const densitySlider = document.getElementById('densitySlider');
+        const densityValue = document.getElementById('densityValue');
+        const stepSlider = document.getElementById('stepSlider');
+        const stepValue = document.getElementById('stepValue');
+        const showFieldCheck = document.getElementById('showField');
+        const showGridCheck = document.getElementById('showGrid');
+        const zoomInBtn = document.getElementById('zoomIn');
+        const zoomOutBtn = document.getElementById('zoomOut');
+        const resetViewBtn = document.getElementById('resetView');
+        const clearCurvesBtn = document.getElementById('clearCurves');
+        const currentEquationSpan = document.getElementById('currentEquation');
+        const mousePosSpan = document.getElementById('mousePos');
+        const currentSlopeSpan = document.getElementById('currentSlope');
+        const curveCountSpan = document.getElementById('curveCount');
+
+        // 核心函数：安全地解析和计算用户输入的数学表达式 f(x, y)
+        function createFunctionFromExpression(expr) {
+            // 注意：math.js 库本身支持 ^ 作为幂运算符，不需要替换为 **
+            try {
+                const compiled = math.compile(expr);
+                // 返回一个接收 x, y 并计算结果的函数
+                return function(x, y) {
+                    try {
+                        return compiled.evaluate({x: x, y: y});
+                    } catch (evalErr) {
+                        console.warn("计算函数值时出错:", evalErr.message, "在点 (", x, ",", y, ")");
+                        return NaN; // 对于无定义的点（如 y/x 在 x=0），返回 NaN
+                    }
+                };
+            } catch (compileErr) {
+                console.error("表达式解析失败:", compileErr.message);
+                alert(`表达式解析错误：${compileErr.message}。请检查数学表达式。`);
+                // 返回一个总是返回 0 的默认函数
+                return (x, y) => 0;
+            }
+        }
+
+        // 核心函数：四阶龙格-库塔法 (RK4) 数值积分
+        function rungeKutta4(f, x0, y0, h, steps) {
+            const points = [[x0, y0]];
+            let x = x0;
+            let y = y0;
+
+            for (let i = 0; i < steps; i++) {
+                const k1 = f(x, y);
+                if (isNaN(k1)) break; // 如果斜率无定义，停止积分
+                const k2 = f(x + h/2, y + h/2 * k1);
+                const k3 = f(x + h/2, y + h/2 * k2);
+                const k4 = f(x + h, y + h * k3);
+
+                y = y + h/6 * (k1 + 2*k2 + 2*k3 + k4);
+                x = x + h;
+                points.push([x, y]);
+            }
+            return points;
+        }
+
+        // 坐标转换：逻辑坐标 (数学坐标) <-> 画布像素坐标
+        function logicalToCanvas(lx, ly) {
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const x = centerX + (lx - AppState.viewOffsetX) * 50 * AppState.viewScale;
+            const y = centerY - (ly - AppState.viewOffsetY) * 50 * AppState.viewScale; // 注意Y轴反转
+            return {x, y};
+        }
+        
+        function canvasToLogical(cx, cy) {
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const lx = (cx - centerX) / (50 * AppState.viewScale) + AppState.viewOffsetX;
+            const ly = (centerY - cy) / (50 * AppState.viewScale) + AppState.viewOffsetY;
+            return {x: lx, y: ly};
+        }
+
+        // 绘图函数
+        function drawGridAndAxes() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.save();
+
+            // 应用视图变换：先平移到中心，再缩放
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            ctx.translate(centerX, centerY);
+            ctx.scale(1, -1); // 反转Y轴，使数学坐标系向上为正
+            ctx.scale(50 * AppState.viewScale, 50 * AppState.viewScale);
+            ctx.translate(-AppState.viewOffsetX, -AppState.viewOffsetY);
+
+            const logicalWidth = (canvas.width / (50 * AppState.viewScale));
+            const logicalHeight = (canvas.height / (50 * AppState.viewScale));
+            const left = AppState.viewOffsetX - logicalWidth / 2;
+            const right = AppState.viewOffsetX + logicalWidth / 2;
+            const bottom = AppState.viewOffsetY - logicalHeight / 2;
+            const top = AppState.viewOffsetY + logicalHeight / 2;
+
+            // 绘制网格线
+            if (AppState.showGrid) {
+                ctx.strokeStyle = '#e0e0e0';
+                ctx.lineWidth = 1 / (50 * AppState.viewScale); // 线宽随缩放调整
+                ctx.beginPath();
+                // 垂直网格线
+                const xStart = Math.ceil(left);
+                const xEnd = Math.floor(right);
+                for (let x = xStart; x <= xEnd; x++) {
+                    ctx.moveTo(x, bottom);
+                    ctx.lineTo(x, top);
+                }
+                // 水平网格线
+                const yStart = Math.ceil(bottom);
+                const yEnd = Math.floor(top);
+                for (let y = yStart; y <= yEnd; y++) {
+                    ctx.moveTo(left, y);
+                    ctx.lineTo(right, y);
+                }
+                ctx.stroke();
+            }
+
+            // 绘制坐标轴
+            ctx.strokeStyle = '#000';
+            ctx.lineWidth = 2 / (50 * AppState.viewScale);
+            ctx.beginPath();
+            // X轴
+            ctx.moveTo(left, 0);
+            ctx.lineTo(right, 0);
+            // Y轴
+            ctx.moveTo(0, bottom);
+            ctx.lineTo(0, top);
+            ctx.stroke();
+
+            // 绘制刻度
+            ctx.strokeStyle = '#000';
+            ctx.lineWidth = 2 / (50 * AppState.viewScale);
+            // X轴刻度
+            const xTickStart = Math.ceil(left);
+            const xTickEnd = Math.floor(right);
+            for (let x = xTickStart; x <= xTickEnd; x++) {
+                if (Math.abs(x) > 0.01) { // 避免在原点画刻度
+                    ctx.beginPath();
+                    ctx.moveTo(x, -0.05);
+                    ctx.lineTo(x, 0.05);
+                    ctx.stroke();
+                }
+            }
+            // Y轴刻度
+            const yTickStart = Math.ceil(bottom);
+            const yTickEnd = Math.floor(top);
+            for (let y = yTickStart; y <= yTickEnd; y++) {
+                if (Math.abs(y) > 0.01) {
+                    ctx.beginPath();
+                    ctx.moveTo(-0.05, y);
+                    ctx.lineTo(0.05, y);
+                    ctx.stroke();
+                }
+            }
+
+            ctx.restore();
+            
+            // 绘制坐标轴标签
+            drawAxisLabels();
+        }
+
+        // 绘制坐标轴标签（在屏幕坐标系中）
+        function drawAxisLabels() {
+            ctx.save();
+            // 重置变换到屏幕坐标系
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
+            
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const logicalWidth = canvas.width / (50 * AppState.viewScale);
+            const logicalHeight = canvas.height / (50 * AppState.viewScale);
+            
+            const left = AppState.viewOffsetX - logicalWidth / 2;
+            const right = AppState.viewOffsetX + logicalWidth / 2;
+            const bottom = AppState.viewOffsetY - logicalHeight / 2;
+            const top = AppState.viewOffsetY + logicalHeight / 2;
+            
+            // 设置固定的字体大小
+            ctx.font = '12px Arial';
+            ctx.fillStyle = '#000';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'top';
+            
+            // 绘制X轴刻度标签
+            const xTickStart = Math.ceil(left);
+            const xTickEnd = Math.floor(right);
+            for (let x = xTickStart; x <= xTickEnd; x++) {
+                if (Math.abs(x) > 0.01) { // 避免在原点画标签
+                    const canvasPos = logicalToCanvas(x, 0);
+                    ctx.fillText(x.toString(), canvasPos.x, canvasPos.y + 5);
+                }
+            }
+            
+            // 绘制Y轴刻度标签
+            ctx.textAlign = 'right';
+            ctx.textBaseline = 'middle';
+            const yTickStart = Math.ceil(bottom);
+            const yTickEnd = Math.floor(top);
+            for (let y = yTickStart; y <= yTickEnd; y++) {
+                if (Math.abs(y) > 0.01) { // 避免在原点画标签
+                    const canvasPos = logicalToCanvas(0, y);
+                    ctx.fillText(y.toString(), canvasPos.x - 5, canvasPos.y);
+                }
+            }
+            
+            // 绘制原点标签
+            ctx.textAlign = 'left';
+            ctx.textBaseline = 'top';
+            const originPos = logicalToCanvas(0, 0);
+            ctx.fillText('O', originPos.x + 5, originPos.y + 5);
+            
+            ctx.restore();
+        }
+
+        function drawDirectionField() {
+            if (!AppState.showField) return;
+            
+            ctx.save();
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            ctx.translate(centerX, centerY);
+            ctx.scale(1, -1); // 数学坐标系
+            ctx.scale(50 * AppState.viewScale, 50 * AppState.viewScale);
+            ctx.translate(-AppState.viewOffsetX, -AppState.viewOffsetY);
+
+            const logicalWidth = (canvas.width / (50 * AppState.viewScale));
+            const logicalHeight = (canvas.height / (50 * AppState.viewScale));
+            const left = AppState.viewOffsetX - logicalWidth / 2;
+            const right = AppState.viewOffsetX + logicalWidth / 2;
+            const bottom = AppState.viewOffsetY - logicalHeight / 2;
+            const top = AppState.viewOffsetY + logicalHeight / 2;
+
+            const N = AppState.density;
+            const dx = (right - left) / N;
+            const dy = (top - bottom) / N;
+            const segmentLength = Math.min(dx, dy) * 0.3; // 线素长度为网格间距的30%
+
+            ctx.strokeStyle = '#7f8c8d';
+            ctx.lineWidth = 1.5 / (50 * AppState.viewScale);
+            ctx.lineCap = 'round';
+
+            for (let i = 0; i <= N; i++) {
+                const x = left + i * dx;
+                for (let j = 0; j <= N; j++) {
+                    const y = bottom + j * dy;
+                    const slope = AppState.currentFunc(x, y);
+                    if (isNaN(slope) || !isFinite(slope)) continue;
+
+                    // 计算线段端点
+                    const angle = Math.atan(slope);
+                    const dxSeg = segmentLength * Math.cos(angle) / 2;
+                    const dySeg = segmentLength * Math.sin(angle) / 2;
+
+                    ctx.beginPath();
+                    ctx.moveTo(x - dxSeg, y - dySeg);
+                    ctx.lineTo(x + dxSeg, y + dySeg);
+                    ctx.stroke();
+                }
+            }
+            ctx.restore();
+        }
+
+        function drawIntegralCurves() {
+            if (AppState.curves.length === 0) return;
+            
+            ctx.save();
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            ctx.translate(centerX, centerY);
+            ctx.scale(1, -1);
+            ctx.scale(50 * AppState.viewScale, 50 * AppState.viewScale);
+            ctx.translate(-AppState.viewOffsetX, -AppState.viewOffsetY);
+
+            AppState.curves.forEach((curve, idx) => {
+                if (curve.points.length < 2) return;
+                ctx.strokeStyle = curve.color;
+                ctx.lineWidth = 2.5 / (50 * AppState.viewScale);
+                ctx.lineJoin = 'round';
+                ctx.lineCap = 'round';
+                ctx.beginPath();
+                
+                const firstPoint = curve.points[0];
+                ctx.moveTo(firstPoint[0], firstPoint[1]);
+                
+                for (let i = 1; i < curve.points.length; i++) {
+                    const pt = curve.points[i];
+                    ctx.lineTo(pt[0], pt[1]);
+                }
+                ctx.stroke();
+
+                // 绘制初值点
+                ctx.fillStyle = curve.color;
+                ctx.beginPath();
+                ctx.arc(firstPoint[0], firstPoint[1], 0.08, 0, 2 * Math.PI);
+                ctx.fill();
+            });
+            ctx.restore();
+        }
+
+        // 计算并绘制一条新的积分曲线
+        function computeAndDrawCurve(startX, startY) {
+            if (AppState.curves.length >= AppState.maxCurves) {
+                alert(`最多只能绘制 ${AppState.maxCurves} 条积分曲线。请先清除一些曲线。`);
+                return;
+            }
+            
+            const h = AppState.rkStep;
+            const stepsOneSide = 100; // 每个方向积分的步数
+            const curvePoints = [];
+
+            // 向右积分
+            const pointsRight = rungeKutta4(AppState.currentFunc, startX, startY, Math.abs(h), stepsOneSide);
+            // 向左积分 (步长为负)
+            const pointsLeft = rungeKutta4(AppState.currentFunc, startX, startY, -Math.abs(h), stepsOneSide);
+            
+            // 合并，注意顺序：左边反转，然后连接起点，再连接右边
+            curvePoints.push(...pointsLeft.slice(1).reverse()); // 去掉重复的起点并反转顺序
+            curvePoints.push([startX, startY]);
+            curvePoints.push(...pointsRight.slice(1));
+
+            if (curvePoints.length > 1) {
+                const color = AppState.curveColors[AppState.curves.length % AppState.curveColors.length];
+                AppState.curves.push({points: curvePoints, color: color});
+                updateCurveCount();
+                redrawAll();
+            }
+        }
+
+        function redrawAll() {
+            drawGridAndAxes();
+            drawDirectionField();
+            drawIntegralCurves();
+        }
+
+        function updateCurveCount() {
+            curveCountSpan.textContent = `${AppState.curves.length} 条`;
+        }
+
+        // 事件处理函数
+        function updateEquationAndRedraw() {
+            const expr = equationInput.value.trim();
+            try {
+                AppState.currentFunc = createFunctionFromExpression(expr);
+                currentEquationSpan.textContent = `dy/dx = ${expr}`;
+                redrawAll();
+            } catch (err) {
+                alert("无法解析方程表达式。");
+            }
+        }
+
+        function updateViewFromInputs() {
+            AppState.xMin = parseFloat(xminInput.value);
+            AppState.xMax = parseFloat(xmaxInput.value);
+            AppState.yMin = parseFloat(yminInput.value);
+            AppState.yMax = parseFloat(ymaxInput.value);
+            
+            // 重设视图变换到默认
+            AppState.viewOffsetX = (AppState.xMin + AppState.xMax) / 2;
+            AppState.viewOffsetY = (AppState.yMin + AppState.yMax) / 2;
+            
+            const scaleX = canvas.width / ((AppState.xMax - AppState.xMin) * 50);
+            const scaleY = canvas.height / ((AppState.yMax - AppState.yMin) * 50);
+            AppState.viewScale = Math.min(scaleX, scaleY) * 0.9; // 留一点边距
+            
+            redrawAll();
+        }
+
+        // 鼠标事件处理
+        canvas.addEventListener('mousedown', (e) => {
+            AppState.isDragging = false;
+            AppState.lastMouseX = e.clientX;
+            AppState.lastMouseY = e.clientY;
+            AppState.mouseDownX = e.clientX;
+            AppState.mouseDownY = e.clientY;
+            canvas.style.cursor = 'grabbing';
+        });
+        
+        canvas.addEventListener('mousemove', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+            const logicalPos = canvasToLogical(mouseX, mouseY);
+            
+            mousePosSpan.textContent = `(${logicalPos.x.toFixed(2)}, ${logicalPos.y.toFixed(2)})`;
+            
+            try {
+                const slope = AppState.currentFunc(logicalPos.x, logicalPos.y);
+                currentSlopeSpan.textContent = isNaN(slope) || !isFinite(slope) ? '未定义' : slope.toFixed(2);
+            } catch {
+                currentSlopeSpan.textContent = '计算错误';
+            }
+            
+            // 检查是否开始拖拽
+            if (AppState.mouseDownX !== 0 && AppState.mouseDownY !== 0) {
+                const deltaX = Math.abs(e.clientX - AppState.mouseDownX);
+                const deltaY = Math.abs(e.clientY - AppState.mouseDownY);
+                const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+                
+                if (distance > AppState.dragThreshold) {
+                    AppState.isDragging = true;
+                }
+            }
+            
+            if (AppState.isDragging) {
+                const deltaX = e.clientX - AppState.lastMouseX;
+                const deltaY = e.clientY - AppState.lastMouseY;
+                AppState.viewOffsetX -= deltaX / (50 * AppState.viewScale);
+                AppState.viewOffsetY += deltaY / (50 * AppState.viewScale); // 注意符号
+                AppState.lastMouseX = e.clientX;
+                AppState.lastMouseY = e.clientY;
+                redrawAll();
+            }
+        });
+        
+        canvas.addEventListener('mouseup', (e) => {
+            // 如果是点击（没有拖拽或拖拽距离小于阈值），则添加积分曲线
+            if (!AppState.isDragging) {
+                const rect = canvas.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                const logicalPos = canvasToLogical(x, y);
+                computeAndDrawCurve(logicalPos.x, logicalPos.y);
+            }
+            
+            // 重置状态
+            AppState.isDragging = false;
+            AppState.mouseDownX = 0;
+            AppState.mouseDownY = 0;
+            canvas.style.cursor = 'crosshair';
+        });
+        
+        canvas.addEventListener('mouseleave', () => {
+            // 重置状态
+            AppState.isDragging = false;
+            AppState.mouseDownX = 0;
+            AppState.mouseDownY = 0;
+            canvas.style.cursor = 'crosshair';
+        });
+        
+        canvas.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+            const logicalPosBefore = canvasToLogical(mouseX, mouseY);
+            const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
+            AppState.viewScale *= zoomFactor;
+            // 调整偏移，使缩放中心保持在同一逻辑点
+            const logicalPosAfter = canvasToLogical(mouseX, mouseY);
+            AppState.viewOffsetX += logicalPosBefore.x - logicalPosAfter.x;
+            AppState.viewOffsetY += logicalPosBefore.y - logicalPosAfter.y;
+            redrawAll();
+        });
+
+        // UI 控件事件监听
+        equationInput.addEventListener('change', updateEquationAndRedraw);
+        presetSelect.addEventListener('change', () => {
+            equationInput.value = presetSelect.value;
+            updateEquationAndRedraw();
+        });
+        updateViewBtn.addEventListener('click', updateViewFromInputs);
+        densitySlider.addEventListener('input', () => {
+            AppState.density = densitySlider.value;
+            densityValue.textContent = AppState.density;
+            redrawAll();
+        });
+        stepSlider.addEventListener('input', () => {
+            AppState.rkStep = parseFloat(stepSlider.value);
+            stepValue.textContent = AppState.rkStep.toFixed(2);
+        });
+        showFieldCheck.addEventListener('change', () => {
+            AppState.showField = showFieldCheck.checked;
+            redrawAll();
+        });
+        showGridCheck.addEventListener('change', () => {
+            AppState.showGrid = showGridCheck.checked;
+            redrawAll();
+        });
+        zoomInBtn.addEventListener('click', () => {
+            AppState.viewScale *= 1.2;
+            redrawAll();
+        });
+        zoomOutBtn.addEventListener('click', () => {
+            AppState.viewScale /= 1.2;
+            redrawAll();
+        });
+        resetViewBtn.addEventListener('click', updateViewFromInputs);
+        clearCurvesBtn.addEventListener('click', () => {
+            AppState.curves = [];
+            updateCurveCount();
+            redrawAll();
+        });
+
+        // 初始化
+        function init() {
+            // 设置滑块显示值
+            densityValue.textContent = AppState.density;
+            stepValue.textContent = AppState.rkStep.toFixed(2);
+            
+            // 初始化方程显示
+            currentEquationSpan.textContent = `dy/dx = ${equationInput.value}`;
+            
+            // 设置初始视图
+            updateViewFromInputs();
+        }
+
+        // 启动应用
+        window.onload = init;
+    </script>
+</body>
+</html>
