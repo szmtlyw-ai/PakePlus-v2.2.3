@@ -1,0 +1,1517 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>解的存在唯一性定理与数值解法模拟器</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/12.4.0/math.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        body {
+            margin: 20px;
+            padding: 0;
+            background-color: #f5f9ff;
+            color: #333;
+            line-height: 1.6;
+        }
+        header {
+            text-align: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #4a6fa5;
+        }
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+        .subtitle {
+            color: #7f8c8d;
+            font-size: 0.95em;
+        }
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+        .left-panel {
+            flex: 1;
+            min-width: 350px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .right-panel {
+            flex: 2;
+            min-width: 800px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .control-section {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+        .control-section h2 {
+            color: #3498db;
+            font-size: 1.2em;
+            margin-top: 0;
+            margin-bottom: 15px;
+            border-left: 4px solid #3498db;
+            padding-left: 10px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        input[type="text"], input[type="number"], select {
+            width: 100%;
+            padding: 10px 12px;
+            margin-bottom: 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 0.95em;
+            transition: border 0.3s;
+        }
+        input[type="text"]:focus, input[type="number"]:focus, select:focus {
+            border-color: #3498db;
+            outline: none;
+        }
+        .range-inputs, .coord-inputs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+        .range-inputs input, .coord-inputs input {
+            flex: 1;
+        }
+        .slider-container {
+            margin-bottom: 20px;
+        }
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+        }
+        .slider-value {
+            font-weight: bold;
+            color: #e74c3c;
+        }
+        input[type="range"] {
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: #ddd;
+            outline: none;
+        }
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        button {
+            flex: 1;
+            padding: 12px 16px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.95em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        button:active {
+            transform: scale(0.98);
+        }
+        button#clearAll {
+            background-color: #e74c3c;
+        }
+        button#clearAll:hover {
+            background-color: #c0392b;
+        }
+        button.mode-btn {
+            background-color: #9b59b6;
+        }
+        button.mode-btn:hover {
+            background-color: #8e44ad;
+        }
+        button.mode-btn.active {
+            background-color: #8e44ad;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
+        }
+        .checkbox-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+        }
+        .checkbox-item input {
+            margin-right: 8px;
+            transform: scale(1.1);
+        }
+        .canvas-container {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+            position: relative;
+        }
+        #mainCanvas {
+            display: block;
+            background-color: #fff;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            cursor: crosshair;
+            width: 800px;
+            height: 600px;
+        }
+        .info-panel {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 12px;
+        }
+        .info-item {
+            background: #f8f9fa;
+            padding: 12px;
+            border-radius: 6px;
+            border-left: 4px solid #3498db;
+        }
+        .info-item h3 {
+            margin-top: 0;
+            margin-bottom: 6px;
+            font-size: 0.9em;
+            color: #7f8c8d;
+        }
+        .info-item p {
+            margin: 0;
+            font-size: 1.1em;
+            font-weight: bold;
+            color: #2c3e50;
+            word-break: break-all;
+        }
+        .instructions {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #e8f4fc;
+            border-radius: 8px;
+            border-left: 4px solid #3498db;
+            font-size: 0.9em;
+        }
+        .instructions h3 {
+            margin-top: 0;
+            color: #2c3e50;
+        }
+        .instructions ul {
+            margin-bottom: 0;
+            padding-left: 20px;
+        }
+        .instructions li {
+            margin-bottom: 6px;
+        }
+        footer {
+            text-align: center;
+            margin-top: 30px;
+            color: #95a5a6;
+            font-size: 0.85em;
+        }
+        .method-legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-top: 10px;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .legend-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 2px;
+        }
+        .legend-text {
+            font-size: 0.85em;
+        }
+        .animation-controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .animation-controls button {
+            padding: 8px 12px;
+        }
+        .error-display {
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #fff3cd;
+            border-radius: 6px;
+            border: 1px solid #ffeaa7;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>解的存在唯一性定理与数值解法模拟器</h1>
+        <p class="subtitle">直观探索逐次逼近构造与数值解法精度 | 《常微分方程》教学辅助工具 | 存在唯一性定理与数值方法对比</p>
+    </header>
+
+    <div class="container">
+        <div class="left-panel">
+            <div class="control-section">
+                <h2>1. 方程与初值设置</h2>
+                <label for="equationInput">微分方程 dy/dx = f(x, y)：</label>
+                <input type="text" id="equationInput" value="x + y" placeholder="例如：x+y, y, x^2+y^2">
+                <label for="presetSelect">预设教学方程：</label>
+                <select id="presetSelect">
+                    <option value="x+y" data-exact="exp(x)-x-1">dy/dx = x + y (精确解: y = e^x - x - 1)</option>
+                    <option value="y" data-exact="exp(x)">dy/dx = y (精确解: y = e^x)</option>
+                    <option value="x^2+y^2" data-exact="">dy/dx = x^2 + y^2 (无简单精确解)</option>
+                    <option value="2*x" data-exact="x^2">dy/dx = 2x (精确解: y = x^2)</option>
+                    <option value="cos(x)" data-exact="sin(x)">dy/dx = cos(x) (精确解: y = sin(x))</option>
+                    <option value="y-x^2+1" data-exact="">dy/dx = y - x^2 + 1 (无简单精确解)</option>
+                </select>
+                <div class="coord-inputs">
+                    <div style="flex:1">
+                        <label for="x0">初值 x₀：</label>
+                        <input type="number" id="x0" step="0.1" value="0">
+                    </div>
+                    <div style="flex:1">
+                        <label for="y0">初值 y₀：</label>
+                        <input type="number" id="y0" step="0.1" value="0">
+                    </div>
+                </div>
+                <label for="exactSolution">精确解表达式 (可选)：</label>
+                <input type="text" id="exactSolution" placeholder="例如：exp(x)-x-1" value="exp(x)-x-1">
+            </div>
+
+            <div class="control-section">
+                <h2>2. 工作模式</h2>
+                <div class="button-group">
+                    <button id="modeTheorem" class="mode-btn active">存在唯一性定理演示</button>
+                    <button id="modeNumerical" class="mode-btn">数值解法对比</button>
+                </div>
+            </div>
+
+            <div class="control-section" id="theoremControls">
+                <h2>3. 存在唯一性定理参数</h2>
+                <label>矩形区域 R: |x-x₀| ≤ a, |y-y₀| ≤ b</label>
+                <div class="range-inputs">
+                    <input type="number" id="paramA" step="0.1" value="1" min="0.1" max="5">
+                    <input type="number" id="paramB" step="0.1" value="1" min="0.1" max="5">
+                </div>
+                <div class="slider-container">
+                    <div class="slider-label">
+                        <span>最大迭代次数 n</span>
+                        <span id="iterValue" class="slider-value">5</span>
+                    </div>
+                    <input type="range" id="iterSlider" min="1" max="10" step="1" value="5">
+                </div>
+                <div class="slider-container">
+                    <div class="slider-label">
+                        <span>当前显示步数 k</span>
+                        <span id="stepValue" class="slider-value">5</span>
+                    </div>
+                    <input type="range" id="stepSlider" min="0" max="5" step="1" value="5">
+                </div>
+                <div class="animation-controls">
+                    <button id="playAnimation">播放动画</button>
+                    <button id="pauseAnimation" disabled>暂停</button>
+                    <button id="resetAnimation">重置</button>
+                </div>
+            </div>
+
+            <div class="control-section" id="numericalControls" style="display:none">
+                <h2>4. 数值解法参数</h2>
+                <label for="xEnd">求解区间 [x₀, x_end]：</label>
+                <input type="number" id="xEnd" step="0.1" value="2" min="0.1" max="10">
+                <div class="slider-container">
+                    <div class="slider-label">
+                        <span>步长 h</span>
+                        <span id="hValue" class="slider-value">0.1</span>
+                    </div>
+                    <input type="range" id="hSlider" min="0.01" max="0.5" step="0.01" value="0.1">
+                </div>
+                <label>数值方法选择：</label>
+                <div class="checkbox-group">
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="methodEuler" checked>
+                        <label for="methodEuler">欧拉法 (Euler)</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="methodImprovedEuler" checked>
+                        <label for="methodImprovedEuler">改进欧拉法</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="methodRK4" checked>
+                        <label for="methodRK4">经典四阶龙格-库塔法 (RK4)</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="control-section">
+                <h2>5. 视图控制</h2>
+                <div class="checkbox-group">
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="showRect" checked>
+                        <label for="showRect">显示矩形区域 R</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="showTriangle" checked>
+                        <label for="showTriangle">显示约束三角形</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="showExact" checked>
+                        <label for="showExact">显示精确解</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="showGrid" checked>
+                        <label for="showGrid">显示坐标网格</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="showErrors">
+                        <label for="showErrors">显示误差信息</label>
+                    </div>
+                </div>
+                <div class="button-group">
+                    <button id="zoomIn">放大</button>
+                    <button id="zoomOut">缩小</button>
+                    <button id="resetView">重置视图</button>
+                    <button id="clearAll">清除所有</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="right-panel">
+            <div class="canvas-container">
+                <canvas id="mainCanvas" width="800" height="600">
+                    您的浏览器不支持HTML5 Canvas。
+                </canvas>
+            </div>
+
+            <div class="info-panel">
+                <div class="info-grid">
+                    <div class="info-item">
+                        <h3>当前方程</h3>
+                        <p id="currentEquation">dy/dx = x + y</p>
+                    </div>
+                    <div class="info-item">
+                        <h3>工作模式</h3>
+                        <p id="currentMode">存在唯一性定理演示</p>
+                    </div>
+                    <div class="info-item">
+                        <h3>鼠标位置 (x, y)</h3>
+                        <p id="mousePos">(0.00, 0.00)</p>
+                    </div>
+                    <div class="info-item">
+                        <h3>当前斜率 f(x, y)</h3>
+                        <p id="currentSlope">0.00</p>
+                    </div>
+                </div>
+                <div id="theoremInfo">
+                    <div class="info-item" style="margin-top:10px; grid-column: 1 / -1;">
+                        <h3>逐次逼近公式 φₖ(x)</h3>
+                        <p id="approximationFormula">φ₀(x) = y₀, φₖ₊₁(x) = y₀ + ∫f(ξ, φₖ(ξ))dξ</p>
+                    </div>
+                </div>
+                <div id="numericalInfo" style="display:none">
+                    <div class="error-display">
+                        <div><strong>数值解误差对比 (x = <span id="errorX">2.00</span>)：</strong></div>
+                        <div>欧拉法误差: <span id="errorEuler">0.0000</span></div>
+                        <div>改进欧拉法误差: <span id="errorImprovedEuler">0.0000</span></div>
+                        <div>龙格-库塔法误差: <span id="errorRK4">0.0000</span></div>
+                    </div>
+                </div>
+                <div class="method-legend" id="legendContainer">
+                    <!-- 图例将通过JavaScript动态生成 -->
+                </div>
+            </div>
+
+            <div class="instructions">
+                <h3>使用说明</h3>
+                <ul>
+                    <li><strong>存在唯一性定理演示</strong>：展示逐次逼近序列 φ₀, φ₁, ..., φₙ 的构造过程，观察序列如何收敛到精确解。</li>
+                    <li><strong>数值解法对比</strong>：对比欧拉法、改进欧拉法和四阶龙格-库塔法的精度，调整步长观察误差变化。</li>
+                    <li><strong>视图控制</strong>：使用鼠标<strong>拖拽</strong>平移视图，<strong>滚轮</strong>缩放视图，或使用控制按钮。</li>
+                    <li><strong>动画控制</strong>：在定理演示模式下，使用播放/暂停按钮观看逐次逼近的动态过程。</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p>解的存在唯一性定理与数值解法模拟器 | 常微分方程教学辅助工具 | 基于 HTML5 Canvas 与 JavaScript 实现</p>
+    </footer>
+
+    <script>
+	// 检查用户是否已登录
+if (sessionStorage.getItem("allow") !== "ok") {
+    window.location.href = "index.html";
+}
+        // 主应用程序状态和配置
+        const AppState = {
+            // 工作模式
+            mode: 'theorem', // 'theorem' 或 'numerical'
+            
+            // 方程相关
+            currentFunc: null,
+            exactFunc: null,
+            
+            // 视图变换
+            viewOffsetX: 0,
+            viewOffsetY: 0,
+            viewScale: 1,
+            
+            // 交互状态
+            isDragging: false,
+            lastMouseX: 0,
+            lastMouseY: 0,
+            mouseDownX: 0,
+            mouseDownY: 0,
+            dragThreshold: 5,
+            
+            // 动画状态
+            isAnimating: false,
+            animationStep: 0,
+            animationInterval: null,
+            
+            // 定理演示数据
+            approximations: [], // 存储逐次逼近的离散点
+            maxIterations: 5,
+            currentStep: 5,
+            rectangleA: 1,
+            rectangleB: 1,
+            M: 0, // 矩形区域内|f(x,y)|的最大值
+            
+            // 数值解法数据
+            numericalResults: {
+                euler: [],
+                improvedEuler: [],
+                rk4: []
+            },
+            exactSolutionPoints: [],
+            stepSize: 0.1,
+            xEnd: 2,
+            
+            // 显示控制
+            showRect: true,
+            showTriangle: true,
+            showExact: true,
+            showGrid: true,
+            showErrors: false
+        };
+
+        // DOM 元素引用
+        const canvas = document.getElementById('mainCanvas');
+        const ctx = canvas.getContext('2d');
+        const equationInput = document.getElementById('equationInput');
+        const presetSelect = document.getElementById('presetSelect');
+        const exactSolutionInput = document.getElementById('exactSolution');
+        const x0Input = document.getElementById('x0');
+        const y0Input = document.getElementById('y0');
+        const modeTheoremBtn = document.getElementById('modeTheorem');
+        const modeNumericalBtn = document.getElementById('modeNumerical');
+        const theoremControls = document.getElementById('theoremControls');
+        const numericalControls = document.getElementById('numericalControls');
+        const paramAInput = document.getElementById('paramA');
+        const paramBInput = document.getElementById('paramB');
+        const iterSlider = document.getElementById('iterSlider');
+        const iterValue = document.getElementById('iterValue');
+        const stepSlider = document.getElementById('stepSlider');
+        const stepValue = document.getElementById('stepValue');
+        const playAnimationBtn = document.getElementById('playAnimation');
+        const pauseAnimationBtn = document.getElementById('pauseAnimation');
+        const resetAnimationBtn = document.getElementById('resetAnimation');
+        const xEndInput = document.getElementById('xEnd');
+        const hSlider = document.getElementById('hSlider');
+        const hValue = document.getElementById('hValue');
+        const methodEulerCheck = document.getElementById('methodEuler');
+        const methodImprovedEulerCheck = document.getElementById('methodImprovedEuler');
+        const methodRK4Check = document.getElementById('methodRK4');
+        const showRectCheck = document.getElementById('showRect');
+        const showTriangleCheck = document.getElementById('showTriangle');
+        const showExactCheck = document.getElementById('showExact');
+        const showGridCheck = document.getElementById('showGrid');
+        const showErrorsCheck = document.getElementById('showErrors');
+        const zoomInBtn = document.getElementById('zoomIn');
+        const zoomOutBtn = document.getElementById('zoomOut');
+        const resetViewBtn = document.getElementById('resetView');
+        const clearAllBtn = document.getElementById('clearAll');
+        const currentEquationSpan = document.getElementById('currentEquation');
+        const currentModeSpan = document.getElementById('currentMode');
+        const mousePosSpan = document.getElementById('mousePos');
+        const currentSlopeSpan = document.getElementById('currentSlope');
+        const approximationFormulaSpan = document.getElementById('approximationFormula');
+        const theoremInfo = document.getElementById('theoremInfo');
+        const numericalInfo = document.getElementById('numericalInfo');
+        const legendContainer = document.getElementById('legendContainer');
+        const errorEulerSpan = document.getElementById('errorEuler');
+        const errorImprovedEulerSpan = document.getElementById('errorImprovedEuler');
+        const errorRK4Span = document.getElementById('errorRK4');
+        const errorXSpan = document.getElementById('errorX');
+
+        // 颜色方案
+        const Colors = {
+            rect: 'rgba(52, 152, 219, 0.2)',
+            rectBorder: 'rgba(52, 152, 219, 0.8)',
+            triangle: 'rgba(231, 76, 60, 0.2)',
+            triangleBorder: 'rgba(231, 76, 60, 0.8)',
+            exact: '#e74c3c',
+            grid: '#e0e0e0',
+            axis: '#000',
+            approximation: [
+                '#3498db', '#2980b9', '#1f618d', '#154360', '#0d2c40',
+                '#9b59b6', '#8e44ad', '#7d3c98', '#6c3483', '#5b2c6f'
+            ],
+            euler: '#f39c12',
+            improvedEuler: '#2ecc71',
+            rk4: '#9b59b6',
+            point: '#e74c3c'
+        };
+
+        // 核心函数：安全地解析和计算数学表达式
+        function createFunctionFromExpression(expr) {
+            // 修复：math.js 库本身支持 ^ 作为幂运算符，不需要替换为 **
+            // 删除这行：expr = expr.replace(/\^/g, '**');
+            try {
+                const compiled = math.compile(expr);
+                return function(x, y) {
+                    try {
+                        return compiled.evaluate({x: x, y: y});
+                    } catch (err) {
+                        return NaN;
+                    }
+                };
+            } catch (err) {
+                console.error("表达式解析失败:", err.message);
+                alert(`表达式解析错误：${err.message}。请检查数学表达式。`);
+                return (x, y) => 0;
+            }
+        }
+
+        // 数值解法函数
+        function eulerMethod(f, x0, y0, h, steps) {
+            const points = [[x0, y0]];
+            let x = x0;
+            let y = y0;
+            
+            for (let i = 0; i < steps; i++) {
+                y = y + h * f(x, y);
+                x = x + h;
+                points.push([x, y]);
+            }
+            return points;
+        }
+
+        function improvedEulerMethod(f, x0, y0, h, steps) {
+            const points = [[x0, y0]];
+            let x = x0;
+            let y = y0;
+            
+            for (let i = 0; i < steps; i++) {
+                const k1 = f(x, y);
+                const k2 = f(x + h, y + h * k1);
+                y = y + h * (k1 + k2) / 2;
+                x = x + h;
+                points.push([x, y]);
+            }
+            return points;
+        }
+
+        function rungeKutta4(f, x0, y0, h, steps) {
+            const points = [[x0, y0]];
+            let x = x0;
+            let y = y0;
+            
+            for (let i = 0; i < steps; i++) {
+                const k1 = f(x, y);
+                const k2 = f(x + h/2, y + h/2 * k1);
+                const k3 = f(x + h/2, y + h/2 * k2);
+                const k4 = f(x + h, y + h * k3);
+                y = y + h/6 * (k1 + 2*k2 + 2*k3 + k4);
+                x = x + h;
+                points.push([x, y]);
+            }
+            return points;
+        }
+
+        // 计算逐次逼近序列
+        function computeApproximations() {
+            const f = AppState.currentFunc;
+            const x0 = parseFloat(x0Input.value);
+            const y0 = parseFloat(y0Input.value);
+            const a = AppState.rectangleA;
+            const n = AppState.maxIterations;
+            const pointsPerApprox = 100;
+            
+            AppState.approximations = [];
+            
+            // φ₀(x) = y₀
+            const phi0 = [];
+            for (let i = 0; i <= pointsPerApprox; i++) {
+                const x = x0 - a + 2 * a * i / pointsPerApprox;
+                phi0.push([x, y0]);
+            }
+            AppState.approximations.push(phi0);
+            
+            // 计算后续逼近
+            for (let k = 1; k <= n; k++) {
+                const prevApprox = AppState.approximations[k-1];
+                const phiK = [];
+                
+                for (let i = 0; i <= pointsPerApprox; i++) {
+                    const x = x0 - a + 2 * a * i / pointsPerApprox;
+                    
+                    // 数值积分：∫f(ξ, φ_{k-1}(ξ)) dξ 从 x0 到 x
+                    let integral = 0;
+                    const integrationSteps = 100;
+                    const dx = (x - x0) / integrationSteps;
+                    
+                    for (let j = 0; j < integrationSteps; j++) {
+                        const xi = x0 + j * dx;
+                        // 线性插值求 φ_{k-1}(xi)
+                        const xiRel = (xi - (x0 - a)) / (2 * a);
+                        const idx = Math.min(Math.floor(xiRel * pointsPerApprox), pointsPerApprox - 1);
+                        const t = xiRel * pointsPerApprox - idx;
+                        const yPrev = prevApprox[idx][1] * (1 - t) + prevApprox[idx + 1][1] * t;
+                        
+                        integral += f(xi, yPrev) * dx;
+                    }
+                    
+                    phiK.push([x, y0 + integral]);
+                }
+                
+                AppState.approximations.push(phiK);
+            }
+            
+            // 计算矩形区域内的最大斜率M
+            AppState.M = 0;
+            for (let i = 0; i <= 20; i++) {
+                for (let j = 0; j <= 20; j++) {
+                    const x = x0 - a + 2 * a * i / 20;
+                    const y = y0 - AppState.rectangleB + 2 * AppState.rectangleB * j / 20;
+                    const slope = Math.abs(f(x, y));
+                    if (!isNaN(slope) && isFinite(slope)) {
+                        AppState.M = Math.max(AppState.M, slope);
+                    }
+                }
+            }
+        }
+
+        // 计算数值解
+        function computeNumericalSolutions() {
+            const f = AppState.currentFunc;
+            const x0 = parseFloat(x0Input.value);
+            const y0 = parseFloat(y0Input.value);
+            const xEnd = AppState.xEnd;
+            const h = AppState.stepSize;
+            const steps = Math.ceil((xEnd - x0) / h);
+            
+            if (methodEulerCheck.checked) {
+                AppState.numericalResults.euler = eulerMethod(f, x0, y0, h, steps);
+            }
+            if (methodImprovedEulerCheck.checked) {
+                AppState.numericalResults.improvedEuler = improvedEulerMethod(f, x0, y0, h, steps);
+            }
+            if (methodRK4Check.checked) {
+                AppState.numericalResults.rk4 = rungeKutta4(f, x0, y0, h, steps);
+            }
+            
+            // 计算精确解点（如果存在）
+            if (AppState.exactFunc && AppState.showExact) {
+                AppState.exactSolutionPoints = [];
+                for (let i = 0; i <= 200; i++) {
+                    const x = x0 + (xEnd - x0) * i / 200;
+                    const y = AppState.exactFunc(x);
+                    if (!isNaN(y) && isFinite(y)) {
+                        AppState.exactSolutionPoints.push([x, y]);
+                    }
+                }
+            }
+            
+            // 计算并显示误差
+            if (AppState.exactFunc && AppState.showErrors) {
+                const lastX = x0 + steps * h;
+                errorXSpan.textContent = lastX.toFixed(2);
+                
+                if (AppState.numericalResults.euler.length > 0) {
+                    const yEuler = AppState.numericalResults.euler[AppState.numericalResults.euler.length - 1][1];
+                    const yExact = AppState.exactFunc(lastX);
+                    errorEulerSpan.textContent = Math.abs(yEuler - yExact).toFixed(4);
+                }
+                if (AppState.numericalResults.improvedEuler.length > 0) {
+                    const yImproved = AppState.numericalResults.improvedEuler[AppState.numericalResults.improvedEuler.length - 1][1];
+                    const yExact = AppState.exactFunc(lastX);
+                    errorImprovedEulerSpan.textContent = Math.abs(yImproved - yExact).toFixed(4);
+                }
+                if (AppState.numericalResults.rk4.length > 0) {
+                    const yRK4 = AppState.numericalResults.rk4[AppState.numericalResults.rk4.length - 1][1];
+                    const yExact = AppState.exactFunc(lastX);
+                    errorRK4Span.textContent = Math.abs(yRK4 - yExact).toFixed(4);
+                }
+            }
+        }
+
+        // 坐标转换函数
+        function logicalToCanvas(lx, ly) {
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const x = centerX + (lx - AppState.viewOffsetX) * 50 * AppState.viewScale;
+            const y = centerY - (ly - AppState.viewOffsetY) * 50 * AppState.viewScale;
+            return {x, y};
+        }
+        
+        function canvasToLogical(cx, cy) {
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const lx = (cx - centerX) / (50 * AppState.viewScale) + AppState.viewOffsetX;
+            const ly = (centerY - cy) / (50 * AppState.viewScale) + AppState.viewOffsetY;
+            return {x: lx, y: ly};
+        }
+
+        // 绘图函数
+        function drawGridAndAxes() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            if (!AppState.showGrid) return;
+            
+            ctx.save();
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            ctx.translate(centerX, centerY);
+            ctx.scale(1, -1);
+            ctx.scale(50 * AppState.viewScale, 50 * AppState.viewScale);
+            ctx.translate(-AppState.viewOffsetX, -AppState.viewOffsetY);
+            
+            const logicalWidth = canvas.width / (50 * AppState.viewScale);
+            const logicalHeight = canvas.height / (50 * AppState.viewScale);
+            const left = AppState.viewOffsetX - logicalWidth / 2;
+            const right = AppState.viewOffsetX + logicalWidth / 2;
+            const bottom = AppState.viewOffsetY - logicalHeight / 2;
+            const top = AppState.viewOffsetY + logicalHeight / 2;
+            
+            // 绘制网格
+            ctx.strokeStyle = Colors.grid;
+            ctx.lineWidth = 1 / (50 * AppState.viewScale);
+            ctx.beginPath();
+            
+            const xStart = Math.ceil(left);
+            const xEnd = Math.floor(right);
+            for (let x = xStart; x <= xEnd; x++) {
+                ctx.moveTo(x, bottom);
+                ctx.lineTo(x, top);
+            }
+            
+            const yStart = Math.ceil(bottom);
+            const yEnd = Math.floor(top);
+            for (let y = yStart; y <= yEnd; y++) {
+                ctx.moveTo(left, y);
+                ctx.lineTo(right, y);
+            }
+            ctx.stroke();
+            
+            // 绘制坐标轴
+            ctx.strokeStyle = Colors.axis;
+            ctx.lineWidth = 2 / (50 * AppState.viewScale);
+            ctx.beginPath();
+            ctx.moveTo(left, 0);
+            ctx.lineTo(right, 0);
+            ctx.moveTo(0, bottom);
+            ctx.lineTo(0, top);
+            ctx.stroke();
+            
+            ctx.restore();
+            
+            // 绘制坐标轴标签
+            drawAxisLabels();
+        }
+        
+        function drawAxisLabels() {
+            ctx.save();
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
+            
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const logicalWidth = canvas.width / (50 * AppState.viewScale);
+            const logicalHeight = canvas.height / (50 * AppState.viewScale);
+            
+            const left = AppState.viewOffsetX - logicalWidth / 2;
+            const right = AppState.viewOffsetX + logicalWidth / 2;
+            const bottom = AppState.viewOffsetY - logicalHeight / 2;
+            const top = AppState.viewOffsetY + logicalHeight / 2;
+            
+            ctx.font = '12px Arial';
+            ctx.fillStyle = Colors.axis;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'top';
+            
+            const xTickStart = Math.ceil(left);
+            const xTickEnd = Math.floor(right);
+            for (let x = xTickStart; x <= xTickEnd; x++) {
+                if (Math.abs(x) > 0.01) {
+                    const canvasPos = logicalToCanvas(x, 0);
+                    ctx.fillText(x.toString(), canvasPos.x, canvasPos.y + 5);
+                }
+            }
+            
+            ctx.textAlign = 'right';
+            ctx.textBaseline = 'middle';
+            const yTickStart = Math.ceil(bottom);
+            const yTickEnd = Math.floor(top);
+            for (let y = yTickStart; y <= yTickEnd; y++) {
+                if (Math.abs(y) > 0.01) {
+                    const canvasPos = logicalToCanvas(0, y);
+                    ctx.fillText(y.toString(), canvasPos.x - 5, canvasPos.y);
+                }
+            }
+            
+            ctx.textAlign = 'left';
+            ctx.textBaseline = 'top';
+            const originPos = logicalToCanvas(0, 0);
+            ctx.fillText('O', originPos.x + 5, originPos.y + 5);
+            
+            ctx.restore();
+        }
+        
+        function drawRectangle() {
+            if (!AppState.showRect) return;
+            
+            const x0 = parseFloat(x0Input.value);
+            const y0 = parseFloat(y0Input.value);
+            const a = AppState.rectangleA;
+            const b = AppState.rectangleB;
+            
+            ctx.save();
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
+            
+            const topLeft = logicalToCanvas(x0 - a, y0 + b);
+            const bottomRight = logicalToCanvas(x0 + a, y0 - b);
+            
+            // 填充矩形
+            ctx.fillStyle = Colors.rect;
+            ctx.fillRect(topLeft.x, bottomRight.y, bottomRight.x - topLeft.x, topLeft.y - bottomRight.y);
+            
+            // 绘制边框
+            ctx.strokeStyle = Colors.rectBorder;
+            ctx.lineWidth = 2;
+            ctx.setLineDash([5, 5]);
+            ctx.strokeRect(topLeft.x, bottomRight.y, bottomRight.x - topLeft.x, topLeft.y - bottomRight.y);
+            ctx.setLineDash([]);
+            
+            // 绘制标签
+            ctx.fillStyle = Colors.rectBorder;
+            ctx.font = '12px Arial';
+            ctx.textAlign = 'left';
+            ctx.fillText(`矩形区域 R: |x-x₀| ≤ ${a}, |y-y₀| ≤ ${b}`, topLeft.x, bottomRight.y - 10);
+            
+            ctx.restore();
+        }
+        
+        function drawConstraintTriangle() {
+            if (!AppState.showTriangle || AppState.M === 0) return;
+            
+            const x0 = parseFloat(x0Input.value);
+            const y0 = parseFloat(y0Input.value);
+            const a = AppState.rectangleA;
+            const M = AppState.M;
+            
+            ctx.save();
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
+            
+            // 计算三角形顶点
+            const leftX = x0 - a;
+            const rightX = x0 + a;
+            const topY = y0 + M * a;
+            const bottomY = y0 - M * a;
+            
+            const p1 = logicalToCanvas(leftX, y0 + M * (leftX - x0));
+            const p2 = logicalToCanvas(rightX, y0 + M * (rightX - x0));
+            const p3 = logicalToCanvas(rightX, y0 - M * (rightX - x0));
+            const p4 = logicalToCanvas(leftX, y0 - M * (leftX - x0));
+            
+            // 填充三角形区域
+            ctx.fillStyle = Colors.triangle;
+            ctx.beginPath();
+            ctx.moveTo(p1.x, p1.y);
+            ctx.lineTo(p2.x, p2.y);
+            ctx.lineTo(p3.x, p3.y);
+            ctx.lineTo(p4.x, p4.y);
+            ctx.closePath();
+            ctx.fill();
+            
+            // 绘制边界
+            ctx.strokeStyle = Colors.triangleBorder;
+            ctx.lineWidth = 2;
+            ctx.setLineDash([3, 3]);
+            ctx.beginPath();
+            ctx.moveTo(p1.x, p1.y);
+            ctx.lineTo(p2.x, p2.y);
+            ctx.lineTo(p3.x, p3.y);
+            ctx.lineTo(p4.x, p4.y);
+            ctx.closePath();
+            ctx.stroke();
+            ctx.setLineDash([]);
+            
+            // 绘制标签
+            ctx.fillStyle = Colors.triangleBorder;
+            ctx.font = '12px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText(`约束三角形: |y-y₀| ≤ M|x-x₀|, M = ${M.toFixed(2)}`, (p1.x + p2.x) / 2, p1.y - 10);
+            
+            ctx.restore();
+        }
+        
+        function drawApproximations() {
+            if (AppState.approximations.length === 0) return;
+            
+            const currentStep = Math.min(AppState.currentStep, AppState.approximations.length - 1);
+            
+            for (let k = 0; k <= currentStep; k++) {
+                const points = AppState.approximations[k];
+                if (points.length < 2) continue;
+                
+                ctx.save();
+                const centerX = canvas.width / 2;
+                const centerY = canvas.height / 2;
+                ctx.translate(centerX, centerY);
+                ctx.scale(1, -1);
+                ctx.scale(50 * AppState.viewScale, 50 * AppState.viewScale);
+                ctx.translate(-AppState.viewOffsetX, -AppState.viewOffsetY);
+                
+                // 绘制曲线
+                ctx.strokeStyle = Colors.approximation[k % Colors.approximation.length];
+                ctx.lineWidth = 2.5 / (50 * AppState.viewScale);
+                if (k === currentStep) {
+                    ctx.lineWidth = 3.5 / (50 * AppState.viewScale);
+                }
+                ctx.lineJoin = 'round';
+                ctx.lineCap = 'round';
+                ctx.beginPath();
+                
+                const firstPoint = points[0];
+                ctx.moveTo(firstPoint[0], firstPoint[1]);
+                for (let i = 1; i < points.length; i++) {
+                    const pt = points[i];
+                    ctx.lineTo(pt[0], pt[1]);
+                }
+                ctx.stroke();
+                
+                ctx.restore();
+            }
+        }
+        
+        function drawExactSolution() {
+            if (!AppState.showExact || !AppState.exactFunc || AppState.exactSolutionPoints.length < 2) return;
+            
+            ctx.save();
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            ctx.translate(centerX, centerY);
+            ctx.scale(1, -1);
+            ctx.scale(50 * AppState.viewScale, 50 * AppState.viewScale);
+            ctx.translate(-AppState.viewOffsetX, -AppState.viewOffsetY);
+            
+            ctx.strokeStyle = Colors.exact;
+            ctx.lineWidth = 3 / (50 * AppState.viewScale);
+            ctx.lineJoin = 'round';
+            ctx.lineCap = 'round';
+            ctx.beginPath();
+            
+            const firstPoint = AppState.exactSolutionPoints[0];
+            ctx.moveTo(firstPoint[0], firstPoint[1]);
+            for (let i = 1; i < AppState.exactSolutionPoints.length; i++) {
+                const pt = AppState.exactSolutionPoints[i];
+                ctx.lineTo(pt[0], pt[1]);
+            }
+            ctx.stroke();
+            
+            ctx.restore();
+        }
+        
+        function drawNumericalSolutions() {
+            ctx.save();
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            ctx.translate(centerX, centerY);
+            ctx.scale(1, -1);
+            ctx.scale(50 * AppState.viewScale, 50 * AppState.viewScale);
+            ctx.translate(-AppState.viewOffsetX, -AppState.viewOffsetY);
+            
+            // 绘制欧拉法结果
+            if (methodEulerCheck.checked && AppState.numericalResults.euler.length > 0) {
+                ctx.strokeStyle = Colors.euler;
+                ctx.lineWidth = 2 / (50 * AppState.viewScale);
+                ctx.beginPath();
+                const firstPoint = AppState.numericalResults.euler[0];
+                ctx.moveTo(firstPoint[0], firstPoint[1]);
+                for (let i = 1; i < AppState.numericalResults.euler.length; i++) {
+                    const pt = AppState.numericalResults.euler[i];
+                    ctx.lineTo(pt[0], pt[1]);
+                }
+                ctx.stroke();
+                
+                // 绘制点
+                ctx.fillStyle = Colors.euler;
+                for (const pt of AppState.numericalResults.euler) {
+                    ctx.beginPath();
+                    ctx.arc(pt[0], pt[1], 0.1, 0, 2 * Math.PI);
+                    ctx.fill();
+                }
+            }
+            
+            // 绘制改进欧拉法结果
+            if (methodImprovedEulerCheck.checked && AppState.numericalResults.improvedEuler.length > 0) {
+                ctx.strokeStyle = Colors.improvedEuler;
+                ctx.lineWidth = 2 / (50 * AppState.viewScale);
+                ctx.beginPath();
+                const firstPoint = AppState.numericalResults.improvedEuler[0];
+                ctx.moveTo(firstPoint[0], firstPoint[1]);
+                for (let i = 1; i < AppState.numericalResults.improvedEuler.length; i++) {
+                    const pt = AppState.numericalResults.improvedEuler[i];
+                    ctx.lineTo(pt[0], pt[1]);
+                }
+                ctx.stroke();
+                
+                ctx.fillStyle = Colors.improvedEuler;
+                for (const pt of AppState.numericalResults.improvedEuler) {
+                    ctx.beginPath();
+                    ctx.arc(pt[0], pt[1], 0.1, 0, 2 * Math.PI);
+                    ctx.fill();
+                }
+            }
+            
+            // 绘制RK4结果
+            if (methodRK4Check.checked && AppState.numericalResults.rk4.length > 0) {
+                ctx.strokeStyle = Colors.rk4;
+                ctx.lineWidth = 2 / (50 * AppState.viewScale);
+                ctx.beginPath();
+                const firstPoint = AppState.numericalResults.rk4[0];
+                ctx.moveTo(firstPoint[0], firstPoint[1]);
+                for (let i = 1; i < AppState.numericalResults.rk4.length; i++) {
+                    const pt = AppState.numericalResults.rk4[i];
+                    ctx.lineTo(pt[0], pt[1]);
+                }
+                ctx.stroke();
+                
+                ctx.fillStyle = Colors.rk4;
+                for (const pt of AppState.numericalResults.rk4) {
+                    ctx.beginPath();
+                    ctx.arc(pt[0], pt[1], 0.1, 0, 2 * Math.PI);
+                    ctx.fill();
+                }
+            }
+            
+            ctx.restore();
+        }
+        
+        function drawLegend() {
+            legendContainer.innerHTML = '';
+            
+            if (AppState.mode === 'theorem') {
+                const currentStep = Math.min(AppState.currentStep, AppState.approximations.length - 1);
+                for (let k = 0; k <= currentStep; k++) {
+                    const div = document.createElement('div');
+                    div.className = 'legend-item';
+                    div.innerHTML = `
+                        <div class="legend-color" style="background-color: ${Colors.approximation[k % Colors.approximation.length]}"></div>
+                        <div class="legend-text">φ${k}(x)</div>
+                    `;
+                    legendContainer.appendChild(div);
+                }
+                if (AppState.showExact && AppState.exactFunc) {
+                    const div = document.createElement('div');
+                    div.className = 'legend-item';
+                    div.innerHTML = `
+                        <div class="legend-color" style="background-color: ${Colors.exact}"></div>
+                        <div class="legend-text">精确解</div>
+                    `;
+                    legendContainer.appendChild(div);
+                }
+            } else {
+                if (methodEulerCheck.checked) {
+                    const div = document.createElement('div');
+                    div.className = 'legend-item';
+                    div.innerHTML = `
+                        <div class="legend-color" style="background-color: ${Colors.euler}"></div>
+                        <div class="legend-text">欧拉法</div>
+                    `;
+                    legendContainer.appendChild(div);
+                }
+                if (methodImprovedEulerCheck.checked) {
+                    const div = document.createElement('div');
+                    div.className = 'legend-item';
+                    div.innerHTML = `
+                        <div class="legend-color" style="background-color: ${Colors.improvedEuler}"></div>
+                        <div class="legend-text">改进欧拉法</div>
+                    `;
+                    legendContainer.appendChild(div);
+                }
+                if (methodRK4Check.checked) {
+                    const div = document.createElement('div');
+                    div.className = 'legend-item';
+                    div.innerHTML = `
+                        <div class="legend-color" style="background-color: ${Colors.rk4}"></div>
+                        <div class="legend-text">龙格-库塔法</div>
+                    `;
+                    legendContainer.appendChild(div);
+                }
+                if (AppState.showExact && AppState.exactFunc) {
+                    const div = document.createElement('div');
+                    div.className = 'legend-item';
+                    div.innerHTML = `
+                        <div class="legend-color" style="background-color: ${Colors.exact}"></div>
+                        <div class="legend-text">精确解</div>
+                    `;
+                    legendContainer.appendChild(div);
+                }
+            }
+        }
+        
+        function redrawAll() {
+            drawGridAndAxes();
+            
+            if (AppState.mode === 'theorem') {
+                drawRectangle();
+                drawConstraintTriangle();
+                drawApproximations();
+                drawExactSolution();
+            } else {
+                drawExactSolution();
+                drawNumericalSolutions();
+            }
+            
+            drawLegend();
+        }
+        
+        function updateEquation() {
+            const expr = equationInput.value.trim();
+            try {
+                AppState.currentFunc = createFunctionFromExpression(expr);
+                currentEquationSpan.textContent = `dy/dx = ${expr}`;
+                
+                // 尝试设置精确解
+                const exactExpr = exactSolutionInput.value.trim();
+                if (exactExpr) {
+                    try {
+                        const compiled = math.compile(exactExpr);
+                        AppState.exactFunc = function(x) {
+                            try {
+                                return compiled.evaluate({x: x});
+                            } catch (err) {
+                                return NaN;
+                            }
+                        };
+                    } catch (err) {
+                        AppState.exactFunc = null;
+                    }
+                } else {
+                    AppState.exactFunc = null;
+                }
+                
+                if (AppState.mode === 'theorem') {
+                    computeApproximations();
+                } else {
+                    computeNumericalSolutions();
+                }
+                redrawAll();
+            } catch (err) {
+                alert("无法解析方程表达式。");
+            }
+        }
+        
+        function switchMode(mode) {
+            AppState.mode = mode;
+            currentModeSpan.textContent = mode === 'theorem' ? '存在唯一性定理演示' : '数值解法对比';
+            
+            modeTheoremBtn.classList.toggle('active', mode === 'theorem');
+            modeNumericalBtn.classList.toggle('active', mode === 'numerical');
+            
+            theoremControls.style.display = mode === 'theorem' ? 'block' : 'none';
+            numericalControls.style.display = mode === 'numerical' ? 'block' : 'none';
+            theoremInfo.style.display = mode === 'theorem' ? 'block' : 'none';
+            numericalInfo.style.display = mode === 'numerical' ? 'block' : 'none';
+            
+            if (mode === 'theorem') {
+                computeApproximations();
+            } else {
+                computeNumericalSolutions();
+            }
+            redrawAll();
+        }
+        
+        function startAnimation() {
+            if (AppState.isAnimating) return;
+            
+            AppState.isAnimating = true;
+            AppState.animationStep = 0;
+            playAnimationBtn.disabled = true;
+            pauseAnimationBtn.disabled = false;
+            
+            AppState.animationInterval = setInterval(() => {
+                if (AppState.animationStep < AppState.maxIterations) {
+                    AppState.animationStep++;
+                    AppState.currentStep = AppState.animationStep;
+                    stepSlider.value = AppState.currentStep;
+                    stepValue.textContent = AppState.currentStep;
+                    redrawAll();
+                } else {
+                    stopAnimation();
+                }
+            }, 1000);
+        }
+        
+        function stopAnimation() {
+            if (!AppState.isAnimating) return;
+            
+            AppState.isAnimating = false;
+            clearInterval(AppState.animationInterval);
+            playAnimationBtn.disabled = false;
+            pauseAnimationBtn.disabled = true;
+        }
+        
+        function resetAnimation() {
+            stopAnimation();
+            AppState.animationStep = 0;
+            AppState.currentStep = AppState.maxIterations;
+            stepSlider.value = AppState.currentStep;
+            stepValue.textContent = AppState.currentStep;
+            redrawAll();
+        }
+        
+        function updateViewFromInputs() {
+            const x0 = parseFloat(x0Input.value);
+            const y0 = parseFloat(y0Input.value);
+            const xMin = x0 - 2;
+            const xMax = x0 + 2;
+            const yMin = y0 - 2;
+            const yMax = y0 + 2;
+            
+            AppState.viewOffsetX = (xMin + xMax) / 2;
+            AppState.viewOffsetY = (yMin + yMax) / 2;
+            const scaleX = canvas.width / ((xMax - xMin) * 50);
+            const scaleY = canvas.height / ((yMax - yMin) * 50);
+            AppState.viewScale = Math.min(scaleX, scaleY) * 0.9;
+            
+            redrawAll();
+        }
+        
+        // 事件监听
+        equationInput.addEventListener('change', updateEquation);
+        presetSelect.addEventListener('change', () => {
+            const selected = presetSelect.options[presetSelect.selectedIndex];
+            equationInput.value = selected.value;
+            if (selected.dataset.exact) {
+                exactSolutionInput.value = selected.dataset.exact;
+            }
+            updateEquation();
+        });
+        exactSolutionInput.addEventListener('change', updateEquation);
+        x0Input.addEventListener('change', updateEquation);
+        y0Input.addEventListener('change', updateEquation);
+        
+        modeTheoremBtn.addEventListener('click', () => switchMode('theorem'));
+        modeNumericalBtn.addEventListener('click', () => switchMode('numerical'));
+        
+        paramAInput.addEventListener('change', () => {
+            AppState.rectangleA = parseFloat(paramAInput.value);
+            updateEquation();
+        });
+        paramBInput.addEventListener('change', () => {
+            AppState.rectangleB = parseFloat(paramBInput.value);
+            updateEquation();
+        });
+        iterSlider.addEventListener('input', () => {
+            AppState.maxIterations = parseInt(iterSlider.value);
+            AppState.currentStep = AppState.maxIterations;
+            iterValue.textContent = AppState.maxIterations;
+            stepSlider.max = AppState.maxIterations;
+            stepSlider.value = AppState.currentStep;
+            stepValue.textContent = AppState.currentStep;
+            updateEquation();
+        });
+        stepSlider.addEventListener('input', () => {
+            AppState.currentStep = parseInt(stepSlider.value);
+            stepValue.textContent = AppState.currentStep;
+            redrawAll();
+        });
+        
+        playAnimationBtn.addEventListener('click', startAnimation);
+        pauseAnimationBtn.addEventListener('click', stopAnimation);
+        resetAnimationBtn.addEventListener('click', resetAnimation);
+        
+        xEndInput.addEventListener('change', () => {
+            AppState.xEnd = parseFloat(xEndInput.value);
+            computeNumericalSolutions();
+            redrawAll();
+        });
+        hSlider.addEventListener('input', () => {
+            AppState.stepSize = parseFloat(hSlider.value);
+            hValue.textContent = AppState.stepSize.toFixed(2);
+            computeNumericalSolutions();
+            redrawAll();
+        });
+        methodEulerCheck.addEventListener('change', () => {
+            computeNumericalSolutions();
+            redrawAll();
+        });
+        methodImprovedEulerCheck.addEventListener('change', () => {
+            computeNumericalSolutions();
+            redrawAll();
+        });
+        methodRK4Check.addEventListener('change', () => {
+            computeNumericalSolutions();
+            redrawAll();
+        });
+        
+        showRectCheck.addEventListener('change', () => {
+            AppState.showRect = showRectCheck.checked;
+            redrawAll();
+        });
+        showTriangleCheck.addEventListener('change', () => {
+            AppState.showTriangle = showTriangleCheck.checked;
+            redrawAll();
+        });
+        showExactCheck.addEventListener('change', () => {
+            AppState.showExact = showExactCheck.checked;
+            redrawAll();
+        });
+        showGridCheck.addEventListener('change', () => {
+            AppState.showGrid = showGridCheck.checked;
+            redrawAll();
+        });
+        showErrorsCheck.addEventListener('change', () => {
+            AppState.showErrors = showErrorsCheck.checked;
+            computeNumericalSolutions();
+            redrawAll();
+        });
+        
+        zoomInBtn.addEventListener('click', () => {
+            AppState.viewScale *= 1.2;
+            redrawAll();
+        });
+        zoomOutBtn.addEventListener('click', () => {
+            AppState.viewScale /= 1.2;
+            redrawAll();
+        });
+        resetViewBtn.addEventListener('click', updateViewFromInputs);
+        clearAllBtn.addEventListener('click', () => {
+            stopAnimation();
+            AppState.approximations = [];
+            AppState.numericalResults = { euler: [], improvedEuler: [], rk4: [] };
+            AppState.exactSolutionPoints = [];
+            redrawAll();
+        });
+        
+        // 鼠标事件
+        canvas.addEventListener('mousedown', (e) => {
+            AppState.isDragging = false;
+            AppState.lastMouseX = e.clientX;
+            AppState.lastMouseY = e.clientY;
+            AppState.mouseDownX = e.clientX;
+            AppState.mouseDownY = e.clientY;
+            canvas.style.cursor = 'grabbing';
+        });
+        
+        canvas.addEventListener('mousemove', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+            const logicalPos = canvasToLogical(mouseX, mouseY);
+            mousePosSpan.textContent = `(${logicalPos.x.toFixed(2)}, ${logicalPos.y.toFixed(2)})`;
+            
+            if (AppState.currentFunc) {
+                const slope = AppState.currentFunc(logicalPos.x, logicalPos.y);
+                currentSlopeSpan.textContent = isNaN(slope) || !isFinite(slope) ? '未定义' : slope.toFixed(2);
+            }
+            
+            if (AppState.mouseDownX !== 0 && AppState.mouseDownY !== 0) {
+                const deltaX = Math.abs(e.clientX - AppState.mouseDownX);
+                const deltaY = Math.abs(e.clientY - AppState.mouseDownY);
+                const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+                
+                if (distance > AppState.dragThreshold) {
+                    AppState.isDragging = true;
+                }
+            }
+            
+            if (AppState.isDragging) {
+                const deltaX = e.clientX - AppState.lastMouseX;
+                const deltaY = e.clientY - AppState.lastMouseY;
+                AppState.viewOffsetX -= deltaX / (50 * AppState.viewScale);
+                AppState.viewOffsetY += deltaY / (50 * AppState.viewScale);
+                AppState.lastMouseX = e.clientX;
+                AppState.lastMouseY = e.clientY;
+                redrawAll();
+            }
+        });
+        
+        canvas.addEventListener('mouseup', () => {
+            AppState.isDragging = false;
+            AppState.mouseDownX = 0;
+            AppState.mouseDownY = 0;
+            canvas.style.cursor = 'crosshair';
+        });
+        
+        canvas.addEventListener('mouseleave', () => {
+            AppState.isDragging = false;
+            AppState.mouseDownX = 0;
+            AppState.mouseDownY = 0;
+            canvas.style.cursor = 'crosshair';
+        });
+        
+        canvas.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+            const logicalPosBefore = canvasToLogical(mouseX, mouseY);
+            const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
+            AppState.viewScale *= zoomFactor;
+            const logicalPosAfter = canvasToLogical(mouseX, mouseY);
+            AppState.viewOffsetX += logicalPosBefore.x - logicalPosAfter.x;
+            AppState.viewOffsetY += logicalPosBefore.y - logicalPosAfter.y;
+            redrawAll();
+        });
+        
+        // 初始化
+        function init() {
+            // 设置初始值
+            iterValue.textContent = iterSlider.value;
+            stepValue.textContent = stepSlider.value;
+            hValue.textContent = hSlider.value;
+            
+            // 设置初始方程
+            updateEquation();
+            
+            // 设置初始视图
+            updateViewFromInputs();
+        }
+        
+        // 启动应用
+        window.onload = init;
+    </script>
+</body>
+</html>
