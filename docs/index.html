@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>密码登录 - 常微分方程智能可视化教学助手</title>
+    <style>
+        *{
+            margin:0;
+            padding:0;
+            box-sizing:border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', '微软雅黑', sans-serif;
+        }
+        body{
+            background: linear-gradient(135deg, #F8FAFC 0%, #EFF6FF 100%);
+            color:#334155;
+            display:grid;
+            place-items:center;
+            height:100vh;
+            text-align: center;
+        }
+        .container{
+            width: 100%;
+            max-width: 580px;
+            padding: 20px;
+        }
+        .title{
+            font-size: 26px;
+            font-weight: 600;
+            margin-bottom: 10px;
+            letter-spacing: 1px;
+            color: #4A90E2;
+        }
+        .subtitle{
+            font-size: 16px;
+            color: #64748B;
+            margin-bottom: 40px;
+            line-height: 1.6;
+        }
+        .login-box{
+            background:white;
+            padding: 50px 40px;
+            border-radius: 20px;
+            box-shadow: 0 8px 24px rgba(74, 144, 226, 0.07);
+            border: 1px solid #E2E8F0;
+        }
+        .login-box h2{
+            color:#4A90E2;
+            margin-bottom: 30px;
+            font-size: 22px;
+            font-weight: 600;
+        }
+        input{
+            width:100%;
+            padding:16px;
+            margin:10px 0;
+            border:1px solid #E2E8F0;
+            border-radius:10px;
+            font-size:16px;
+            background: #FAFCFF;
+            transition: 0.2s;
+        }
+        input:focus{
+            border-color: #4A90E2;
+            outline: none;
+            box-shadow: 0 0 0 4px rgba(74, 144, 226, 0.08);
+        }
+        button{
+            width:100%;
+            padding:16px;
+            background:#4A90E2;
+            color:white;
+            border:none;
+            border-radius:10px;
+            font-size:16px;
+            margin-top:10px;
+            cursor:pointer;
+            transition: 0.2s;
+            font-weight: 500;
+            box-shadow: 0 4px 12px rgba(74, 144, 226, 0.15);
+        }
+        button:hover{
+            background:#3B82D1;
+            transform: translateY(-1px);
+            box-shadow: 0 6px 16px rgba(74, 144, 226, 0.18);
+        }
+        .tip{
+            color: #F87171;
+            margin-top:15px;
+            display:none;
+            font-size: 14px;
+        }
+        .tip.success {
+            color: #10B981;
+        }
+        .copyright{
+            margin-top: 30px;
+            font-size: 12px;
+            color: #94A3B8;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1 class="title">🧮 常微分方程 | 智能可视化教学助手</h1>
+        <p class="subtitle">
+            原创AI教学工具 · 课堂教学与自主学习专用<br>
+            西北师范大学数学与统计学院 · 陈天兰 设计开发
+        </p>
+
+        <div class="login-box">
+            <h2>平台密码验证</h2>
+            <input type="password" id="pwd" placeholder="请输入访问密码">
+            <button onClick="check()">登录进入教学平台</button>
+            <div class="tip" id="err">密码错误，请重新输入！</div>
+            <div class="tip success" id="success" style="display: none;">验证成功，正在跳转...</div>
+        </div>
+
+        <div class="copyright">© 2025 版权所有 · 盗版必究</div>
+    </div>
+
+    <script>
+        function getPasswordHash() {
+            return "29624e2e4c4ccee26ed8f3e0ca1012ea57a8f2191be6149f632250f7036119cc";
+        }
+        
+        async function sha256(message) {
+            const msgBuffer = new TextEncoder().encode(message);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        }
+        
+        // 密码验证函数
+        async function verifyPassword(input) {
+            if (!input || input.trim() === '') {
+                return false;
+            }
+            
+            const userHash = await sha256(input);
+            const storedHash = getPasswordHash();
+            return userHash === storedHash;
+        }
+        
+        // 登录检查主函数
+        async function check() {
+            const userInput = document.getElementById('pwd').value.trim();
+            const errorElement = document.getElementById('err');
+            const successElement = document.getElementById('success');
+            
+            // 隐藏之前的提示
+            errorElement.style.display = "none";
+            successElement.style.display = "none";
+            
+            if (!userInput) {
+                errorElement.textContent = "请输入密码";
+                errorElement.style.display = "block";
+                return;
+            }
+            
+            // 显示验证中状态
+            const submitBtn = document.querySelector('button');
+            const originalText = submitBtn.textContent;
+            submitBtn.textContent = "验证中...";
+            submitBtn.disabled = true;
+            
+            try {
+                if (await verifyPassword(userInput)) {
+                    // 密码验证成功
+                    successElement.style.display = "block";
+                    sessionStorage.setItem("allow", "ok");
+                    
+                    // 延迟跳转，让用户看到成功提示
+                    setTimeout(() => {
+                        window.location.href = "platform.html";
+                    }, 500);
+                } else {
+                    // 密码验证失败
+                    errorElement.textContent = "密码错误，请重新输入！";
+                    errorElement.style.display = "block";
+                    submitBtn.textContent = originalText;
+                    submitBtn.disabled = false;
+                    
+                    // 清空密码框
+                    document.getElementById('pwd').value = '';
+                    document.getElementById('pwd').focus();
+                }
+            } catch (error) {
+                // 异常处理
+                errorElement.textContent = "验证失败，请重试";
+                errorElement.style.display = "block";
+                submitBtn.textContent = originalText;
+                submitBtn.disabled = false;
+            }
+        }
+        
+        // 获取密码输入框元素
+        const passwordInput = document.getElementById('pwd');
+        
+        // 为密码输入框添加键盘事件监听
+        passwordInput.addEventListener('keydown', async function(event) {
+            if (event.key === 'Enter' || event.keyCode === 13) {
+                event.preventDefault();
+                await check();
+            }
+        });
+        
+        // 为密码输入框添加输入事件监听，当用户开始输入时隐藏错误提示
+        passwordInput.addEventListener('input', function() {
+            document.getElementById('err').style.display = "none";
+        });
+        
+        // 页面加载完成后，自动将焦点设置到密码输入框
+        window.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('pwd').focus();
+            
+            // 如果用户已经登录，直接跳转
+            if (sessionStorage.getItem("allow") === "ok") {
+                window.location.href = "platform.html";
+            }
+        });
+    </script>
+</body>
+</html>
