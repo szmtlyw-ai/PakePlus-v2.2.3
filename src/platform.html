@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>常微分方程 | 智能可视化教学平台</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        :root {
+            /* 竞赛级低饱和高级深蓝（评委一眼记住） */
+            --primary: #165DFF;
+            --header-blue: #0F4C81;
+            --sidebar-blue: #145590;
+            --sidebar-hover: #1A67A8;
+            --sidebar-active: #FFFFFF;
+            --bg: linear-gradient(135deg, #E6F0FF 0%, #D4E2F5 100%);
+            --text: #1F2937;
+            --text-light: #fff;
+            --text-active: #145590;
+            --radius: 12px;
+            --radius-lg: 18px;
+            --header: 70px;
+            --sidebar: 290px;
+            /* 竞赛加分：增加阴影层次 */
+            --shadow-nav: 0 4px 15px rgba(0, 40, 80, 0.18);
+            --shadow-card: 0 8px 28px rgba(0, 50, 100, 0.12);
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            /* 竞赛细节：全局抗锯齿，文字更清晰 */
+            -webkit-font-smoothing: antialiased;
+        }
+        .header {
+            height: var(--header);
+            background: var(--header-blue);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 40px;
+            box-shadow: var(--shadow-nav);
+            z-index: 99;
+            /* 竞赛加分：渐变增强科技感 */
+            background: linear-gradient(90deg, #0F4C81 0%, #145590 100%);
+        }
+        .logo { display: flex; align-items: center; gap: 14px; }
+        .logo-icon { font-size: 30px; color: white; }
+        .logo-text h1 { 
+            font-size: 22px; 
+            color: white; 
+            font-weight: 600;
+            /* 竞赛细节：文字间距更舒展 */
+            letter-spacing: 0.5px;
+        }
+        .logo-text p { 
+            font-size: 12px; 
+            color: rgba(255,255,255,0.9); 
+            margin-top: 2px;
+        }
+        .header-btns { display: flex; gap: 14px; }
+        .btn {
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            border: none;
+            cursor: pointer;
+            transition: 0.25s;
+            background: rgba(255,255,255,0.12);
+            color: white;
+            /* 竞赛加分：按钮微立体 */
+            position: relative;
+            overflow: hidden;
+        }
+        /* 竞赛加分：按钮hover光效 */
+        .btn::after {
+            content: '';
+            position: absolute;
+            top: 0; left: -100%;
+            width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+            transition: 0.5s;
+        }
+        .btn:hover::after { left: 100%; }
+        .btn:hover { 
+            background: rgba(255,255,255,0.2); 
+            transform: translateY(-1px); 
+        }
+        .btn.primary { 
+            background: white; 
+            color: var(--primary);
+            /* 竞赛加分：主按钮阴影增强 */
+            box-shadow: 0 4px 12px rgba(22, 93, 255, 0.25);
+        }
+        .container { display: flex; flex: 1; overflow: hidden; }
+
+        /* ========= 左侧主导航：竞赛级高级深蓝 ========= */
+        .sidebar {
+            width: var(--sidebar);
+            background: var(--sidebar-blue);
+            display: flex;
+            flex-direction: column;
+            transition: 0.35s;
+            position: relative;
+            z-index: 90;
+            /* 竞赛加分：侧边栏内发光边框，科技感拉满 */
+            box-shadow: inset 0 0 0 1px rgba(255,255,255,0.08);
+        }
+        .sidebar.hidden { width: 0; opacity: 0; visibility: hidden; }
+        .sidebar-head {
+            padding: 24px 20px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .sidebar-head h3 { 
+            font-size: 17px; 
+            color: white; 
+            font-weight: 600;
+        }
+        .sidebar-head p { 
+            font-size: 13px; 
+            color: rgba(255,255,255,0.85); 
+            margin-top: 4px;
+        }
+        .menu { flex: 1; overflow-y: auto; padding: 16px; }
+        .group { margin-bottom: 12px; }
+        .group-title {
+            padding: 14px 16px;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 600;
+            color: white;
+            background: rgba(255,255,255,0.08);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            transition: 0.2s;
+            white-space: nowrap;
+        }
+        .group-title:hover { background: rgba(255,255,255,0.15); }
+        .group-items { padding: 6px 8px; display: none; }
+        .group-items.open { display: block; }
+
+        /* 箭头旋转动画（竞赛级丝滑） */
+        .arrow {
+            display: inline-block;
+            transition: transform 0.2s ease-in-out;
+            color: rgba(255,255,255,0.9);
+        }
+        .group-title.open .arrow {
+            transform: rotate(90deg);
+        }
+
+        .tool {
+            padding: 14px 18px;
+            margin: 5px 0;
+            border-radius: 8px;
+            font-size: 15px;
+            color: rgba(255,255,255,0.9);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            /* 竞赛细节：轻微内边距过渡 */
+            padding-left: 20px;
+            white-space: nowrap;
+            overflow: hidden;
+        }
+        .tool:hover {
+            background: var(--sidebar-hover);
+            color: white;
+            padding-left: 22px;
+        }
+        .tool.active {
+            background: var(--sidebar-active);
+            color: var(--text-active);
+            font-weight: 600;
+            /* 竞赛加分：选中态阴影+边框，突出AI工具操作感 */
+            box-shadow: 0 2px 8px rgba(0, 40, 80, 0.15);
+            border-left: 3px solid var(--primary);
+        }
+        
+        /* === 左侧导航底部版权 === */
+        .sidebar-footer {
+            padding: 16px 14px;
+            text-align: center;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            font-size: 11px;
+            color: rgba(255,255,255,0.7);
+            line-height: 1.5;
+        }
+
+        .toggle {
+            position: absolute; right: -13px; top: 50%; transform: translateY(-50%);
+            width: 26px; height: 56px;
+            background: var(--sidebar-blue);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 0 8px 8px 0;
+            display: grid; place-items: center;
+            cursor: pointer; transition: 0.25s; z-index: 89;
+        }
+        .toggle:hover { 
+            background: white; 
+            color: var(--sidebar-blue);
+            /* 竞赛加分：hover放大 */
+            transform: translateY(-50%) scale(1.05);
+        }
+        .show-sidebar {
+            position: fixed; left: -40px; top: 50%; transform: translateY(-50%);
+            width: 40px; height: 68px;
+            background: var(--sidebar-blue);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 0 12px 12px 0;
+            display: grid; place-items: center;
+            cursor: pointer; transition: 0.35s; z-index: 88;
+        }
+        .show-sidebar.show { left: 0; }
+
+        /* ========= 内容区：竞赛级毛玻璃（AI工具核心视觉） ========= */
+        .content { flex: 1; padding: 24px; position: relative; }
+        .content-card {
+            width: 100%; height: 100%;
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(20px);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-card);
+            overflow: hidden;
+            /* 竞赛加分：卡片边框光效 */
+            border: 1px solid rgba(255,255,255,0.8);
+            display: flex;
+            flex-direction: column;
+        }
+        iframe { width: 100%; height: 100%; border: none; flex:1; }
+        .empty {
+            position: absolute; top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            color: #555;
+            width: 100%;
+        }
+        .empty h2 { 
+            font-size: 26px; 
+            color: #333; 
+            margin-bottom: 10px;
+            /* 竞赛细节：空状态文字更有层级 */
+            font-weight: 500;
+        }
+        .empty p { font-size: 15px; margin-bottom: 6px; }
+        .empty .copyright {
+            margin-top: 28px;
+            font-size: 13px;
+            color: #444;
+            line-height: 1.7;
+        }
+        .empty .copyright strong {
+            color: #145590;
+        }
+
+        /* === 内容区底部版权（全局底部） === */
+        .main-footer {
+            padding: 10px 16px;
+            text-align: center;
+            font-size: 12px;
+            color: #666;
+            background: rgba(255,255,255,0.4);
+            border-top: 1px solid rgba(0,0,0,0.05);
+        }
+
+        /* 竞赛级滚动条（细节拉满） */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: rgba(255,255,255,0.05); }
+        ::-webkit-scrollbar-thumb { 
+            background: rgba(255,255,255,0.2); 
+            border-radius: 10px;
+            transition: 0.2s;
+        }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.3); }
+    </style>
+</head>
+<body>
+<header class="header">
+    <div class="logo">
+        <span class="logo-icon">🧮</span>
+        <div class="logo-text">
+            <h1>常微分方程 | 智能可视化教学平台</h1>
+            <p>原创AI教学工具 · 课堂教学与自主学习专用</p>
+        </div>
+    </div>
+    <div class="header-btns">
+        <button class="btn" id="home">🏠 返回首页</button>
+        <button class="btn" id="refresh">🔄 刷新工具</button>
+        <button class="btn primary" id="fullscreen">📺 全屏演示</button>
+        <!-- 已修改为"关闭"按钮 -->
+        <button class="btn" id="closeWindow">❌ 关闭</button>
+    </div>
+</header>
+<div class="container">
+    <div class="sidebar" id="sidebar">
+        <div class="toggle" id="toggleSidebar">❮</div>
+        <div class="sidebar-head">
+            <h3>📚 AI可视化工具列表</h3>
+            <p>全套原创数学智能教学工具</p>
+        </div>
+        <div class="menu" id="menu"></div>
+        
+        <!-- 左侧导航版权 -->
+        <div class="sidebar-footer">
+            西北师范大学数学与统计学院<br>
+            陈天兰 设计开发<br>
+            盗版必究
+        </div>
+    </div>
+
+    <div class="show-sidebar" id="showSidebar">❯</div>
+
+    <div class="content">
+        <div class="content-card">
+            <div class="empty" id="empty">
+                <h2>🚀 请选择左侧AI工具开始学习</h2>
+                <p>专业数学可视化AI教学工具 · 助力课堂教学与自主学习</p>
+                
+                <!-- 中间首页版权 -->
+                <div class="copyright">
+                    <strong>版权所有 © 西北师范大学数学与统计学院 · 陈天兰</strong><br>
+                    邮箱：tianlanchen@126.com　电话：17794223090<br>
+                    原创作品 · 盗版必究
+                </div>
+            </div>
+            <iframe id="frame"></iframe>
+
+            <!-- 全局底部版权 -->
+            <div class="main-footer">
+                © 2025 西北师范大学数学与统计学院 陈天兰 原创开发 | 邮箱：tianlanchen@126.com | 盗版必究
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const tools = [
+    {group:"📘 基础理论可视化", items:[
+        {name:"一阶方程线素场与积分曲线绘制",file:"t1.html"},
+        {name:"解的存在唯一性定理数值模拟",file:"t2.html"},
+        {name:"解的延展与存在区间动态演示",file:"t3.html"},
+        {name:"奇解与包络几何可视化探索",file:"t4.html"},
+        {name:"相平面稳定性与线性化分析",file:"t5.html"},
+        {name:"解对初值连续依赖性实验",file:"t6.html"}
+    ]},
+    {group:"📗 物理应用仿真", items:[
+        {name:"弹簧振动动态仿真器",file:"t7-1.html"},
+        {name:"RLC电路动态仿真器",file:"t7-2.html"},
+        {name:"流体混合过程仿真",file:"t7-3.html"}
+    ]},
+    {group:"📙 轨线分析工具", items:[
+        {name:"等角轨线与正交轨线绘制",file:"t8.html"}
+    ]}
+];
+
+const menu=document.getElementById('menu');
+const frame=document.getElementById('frame');
+const empty=document.getElementById('empty');
+const sidebar=document.getElementById('sidebar');
+const toggleSidebar=document.getElementById('toggleSidebar');
+const showSidebar=document.getElementById('showSidebar');
+
+tools.forEach((g, index)=>{
+    const group=document.createElement('div');
+    group.className='group';
+    
+    // 只有第一个分组默认展开，其他默认关闭
+    const isFirst = index === 0;
+    const title=document.createElement('div');
+    title.className='group-title' + (isFirst ? ' open' : '');
+    title.innerHTML=`<span>${g.group}</span><span class="arrow">▶</span>`;
+    
+    const items=document.createElement('div');
+    items.className='group-items' + (isFirst ? ' open' : '');
+    
+    g.items.forEach(item=>{
+        const t=document.createElement('div');
+        t.className='tool';
+        t.innerText=item.name;
+        t.onclick=()=>{
+            document.querySelectorAll('.tool').forEach(x=>x.classList.remove('active'));
+            t.classList.add('active');
+            empty.style.display='none';
+            frame.src=item.file;
+        };
+        items.appendChild(t);
+    });
+    
+    title.onclick=()=>{
+        title.classList.toggle('open');
+        items.classList.toggle('open');
+    };
+    
+    group.appendChild(title);
+    group.appendChild(items);
+    menu.appendChild(group);
+});
+
+toggleSidebar.onclick=()=>{sidebar.classList.add('hidden');showSidebar.classList.add('show');};
+showSidebar.onclick=()=>{sidebar.classList.remove('hidden');showSidebar.classList.remove('show');};
+document.getElementById('home').onclick=()=>{frame.src='';empty.style.display='block';document.querySelectorAll('.tool').forEach(x=>x.classList.remove('active'));};
+document.getElementById('refresh').onclick=()=>{if(frame.src)frame.contentWindow.location.reload();};
+document.getElementById('fullscreen').onclick=()=>{if(!document.fullscreenElement){document.documentElement.requestFullscreen();}else{document.exitFullscreen();}};
+// 修复关闭窗口功能
+document.getElementById('closeWindow').onclick=()=>{ 
+    // 首先尝试使用标准的window.close()方法
+    window.close();
+    
+    // 如果上述方法不生效，尝试通过打开空白页面再关闭的方式
+    setTimeout(() => {
+        if (!window.closed) {
+            // 如果窗口没有关闭，尝试通过window.open和window.close的组合
+            window.open('', '_self', '');
+            window.close();
+        }
+    }, 100);
+    
+    // 如果上述方法都不生效，显示一个提示
+    setTimeout(() => {
+        if (!window.closed) {
+            // 某些浏览器出于安全原因不允许脚本关闭非脚本打开的窗口
+            alert("此浏览器不允许脚本直接关闭窗口。\n\n请手动关闭此标签页或窗口。");
+        }
+    }, 200);
+};
+</script>
+</body>
+</html>
