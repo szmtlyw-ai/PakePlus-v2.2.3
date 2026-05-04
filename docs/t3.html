@@ -1,0 +1,1488 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>解的延展与存在区间动态演示器</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/12.4.0/math.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #4a6fa5;
+        }
+        
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            color: #7f8c8d;
+            font-size: 1.1em;
+        }
+        
+        .main-content {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        
+        .left-panel {
+            flex: 1;
+            min-width: 350px;
+        }
+        
+        .right-panel {
+            flex: 2;
+            min-width: 800px;
+        }
+        
+        .control-section {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            margin-bottom: 20px;
+        }
+        
+        .control-section h2 {
+            color: #3498db;
+            font-size: 1.2em;
+            margin-bottom: 15px;
+            border-left: 4px solid #3498db;
+            padding-left: 10px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        
+        input[type="text"], input[type="number"] {
+            width: 100%;
+            padding: 10px 12px;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 1em;
+        }
+        
+        .range-inputs, .coord-inputs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .range-inputs input, .coord-inputs input {
+            flex: 1;
+        }
+        
+        .checkbox-group {
+            margin-bottom: 15px;
+        }
+        
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        
+        .checkbox-item input {
+            margin-right: 8px;
+        }
+        
+        .slider-container {
+            margin-bottom: 20px;
+        }
+        
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+        }
+        
+        .slider-value {
+            font-weight: bold;
+            color: #e74c3c;
+        }
+        
+        input[type="range"] {
+            width: 100%;
+            height: 8px;
+            border-radius: 4px;
+            background: #ddd;
+            outline: none;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        button {
+            padding: 12px 20px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            flex: 1;
+        }
+        
+        button:hover {
+            background-color: #2980b9;
+        }
+        
+        button#startBtn {
+            background-color: #2ecc71;
+        }
+        
+        button#startBtn:hover {
+            background-color: #27ae60;
+        }
+        
+        button#pauseBtn {
+            background-color: #f39c12;
+        }
+        
+        button#pauseBtn:hover {
+            background-color: #d68910;
+        }
+        
+        button#clearAll {
+            background-color: #e74c3c;
+        }
+        
+        button#clearAll:hover {
+            background-color: #c0392b;
+        }
+        
+        .example-buttons {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .example-buttons button {
+            padding: 10px;
+            font-size: 0.9em;
+        }
+        
+        .canvas-container {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            margin-bottom: 20px;
+        }
+        
+        #mainCanvas {
+            display: block;
+            background-color: #fff;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            cursor: crosshair;
+        }
+        
+        .info-panel {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+        
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .info-item {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            border-left: 4px solid #3498db;
+        }
+        
+        .info-item h3 {
+            margin-bottom: 5px;
+            font-size: 0.9em;
+            color: #7f8c8d;
+        }
+        
+        .info-item p {
+            font-size: 1.1em;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        
+        .curves-list {
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #eee;
+            border-radius: 6px;
+            padding: 10px;
+        }
+        
+        .curve-item {
+            display: flex;
+            align-items: center;
+            padding: 8px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .curve-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+        
+        .curve-info {
+            flex: 1;
+            font-size: 0.9em;
+        }
+        
+        .instructions {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #e8f4fc;
+            border-radius: 8px;
+            border-left: 4px solid #3498db;
+        }
+        
+        .instructions h3 {
+            margin-bottom: 10px;
+            color: #2c3e50;
+        }
+        
+        .instructions ul {
+            padding-left: 20px;
+        }
+        
+        .instructions li {
+            margin-bottom: 5px;
+        }
+        
+        footer {
+            text-align: center;
+            margin-top: 30px;
+            color: #95a5a6;
+            font-size: 0.9em;
+        }
+        
+        .status-display {
+            padding: 10px;
+            background-color: #fff3cd;
+            border-radius: 6px;
+            border: 1px solid #ffeaa7;
+            margin-bottom: 15px;
+        }
+        
+        .legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-top: 10px;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .legend-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 2px;
+        }
+        
+        .legend-text {
+            font-size: 0.85em;
+        }
+        
+        @media (max-width: 1200px) {
+            .main-content {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>解的延展与存在区间动态演示器</h1>
+            <p class="subtitle">直观探索解的最大存在区间 | 《常微分方程》§2.3 教学辅助工具 | 东北师范大学微分方程教研室</p>
+        </header>
+        
+        <div class="main-content">
+            <div class="left-panel">
+                <div class="control-section">
+                    <h2>1. 方程与定义区域</h2>
+                    <label for="equationInput">微分方程 dy/dx = f(x, y)：</label>
+                    <input type="text" id="equationInput" value="y^2" placeholder="例如：y^2, 1+y^2, y, -y">
+                    
+                    <label>定义区域 R: [x_min, x_max] × [y_min, y_max]</label>
+                    <div class="range-inputs">
+                        <input type="number" id="xmin" step="0.5" value="-3" placeholder="x_min">
+                        <input type="number" id="xmax" step="0.5" value="3" placeholder="x_max">
+                    </div>
+                    <div class="range-inputs">
+                        <input type="number" id="ymin" step="0.5" value="-3" placeholder="y_min">
+                        <input type="number" id="ymax" step="0.5" value="3" placeholder="y_max">
+                    </div>
+                    
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="autoRegion">
+                        <label for="autoRegion">自动确定区域（根据方程特性）</label>
+                    </div>
+                    
+                    <label>初值点 (x₀, y₀)：</label>
+                    <div class="coord-inputs">
+                        <input type="number" id="x0" step="0.1" value="0" placeholder="x₀">
+                        <input type="number" id="y0" step="0.1" value="0.5" placeholder="y₀">
+                    </div>
+                    <p style="color:#666; font-size:0.9em; margin-top:-10px; margin-bottom:15px;">或在右侧画布上点击设置初值点</p>
+                </div>
+                
+                <div class="control-section">
+                    <h2>2. 动画控制参数</h2>
+                    <div class="slider-container">
+                        <div class="slider-label">
+                            <span>积分步长 h</span>
+                            <span id="stepValue" class="slider-value">0.05</span>
+                        </div>
+                        <input type="range" id="stepSlider" min="0.01" max="0.2" step="0.01" value="0.05">
+                    </div>
+                    
+                    <div class="slider-container">
+                        <div class="slider-label">
+                            <span>动画速度</span>
+                            <span id="speedValue" class="slider-value">中速</span>
+                        </div>
+                        <input type="range" id="speedSlider" min="1" max="5" step="1" value="3">
+                    </div>
+                    
+                    <div class="button-group">
+                        <button id="startBtn">开始延展</button>
+                        <button id="pauseBtn" disabled>暂停</button>
+                        <button id="singleStep">单步延展</button>
+                    </div>
+                    
+                    <div class="button-group">
+                        <button id="resetBtn">重置当前曲线</button>
+                        <button id="clearAll">清除所有曲线</button>
+                    </div>
+                </div>
+                
+                <div class="control-section">
+                    <h2>3. 示例方程</h2>
+                    <div class="example-buttons">
+                        <button id="example1" data-equation="y^2" data-xmin="-3" data-xmax="3" data-ymin="-3" data-ymax="3" data-x0="0" data-y0="0.5">y² (有限区间)</button>
+                        <button id="example2" data-equation="1+y^2" data-xmin="-3" data-xmax="3" data-ymin="-3" data-ymax="3" data-x0="0" data-y0="0">1+y² (有限区间)</button>
+                        <button id="example3" data-equation="y" data-xmin="-3" data-xmax="3" data-ymin="-3" data-ymax="3" data-x0="0" data-y0="1">y (无限延展)</button>
+                        <button id="example4" data-equation="-y" data-xmin="-3" data-xmax="3" data-ymin="-3" data-ymax="3" data-x0="0" data-y0="1">-y (无限延展)</button>
+                        <button id="example5" data-equation="x^2+y^2" data-xmin="-2" data-xmax="2" data-ymin="-2" data-ymax="2" data-x0="0" data-y0="0.5">x²+y² (快速发散)</button>
+                        <button id="example6" data-equation="sqrt(abs(y))" data-xmin="-3" data-xmax="3" data-ymin="-1" data-ymax="3" data-x0="0" data-y0="1">√|y| (半无限区间)</button>
+                    </div>
+                </div>
+                
+                <div class="control-section">
+                    <h2>4. 视图控制</h2>
+                    <div class="checkbox-group">
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="showRegion" checked>
+                            <label for="showRegion">显示区域边界</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="showGrid" checked>
+                            <label for="showGrid">显示坐标网格</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="showArrows" checked>
+                            <label for="showArrows">显示延展方向箭头</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="showFrontier" checked>
+                            <label for="showFrontier">显示延展前沿点</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="right-panel">
+                <div class="canvas-container">
+                    <canvas id="mainCanvas" width="800" height="600"></canvas>
+                </div>
+                
+                <div class="info-panel">
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <h3>当前方程</h3>
+                            <p id="currentEquation">dy/dx = y²</p>
+                        </div>
+                        <div class="info-item">
+                            <h3>定义区域 R</h3>
+                            <p id="currentRegion">[-3, 3] × [-3, 3]</p>
+                        </div>
+                        <div class="info-item">
+                            <h3>鼠标位置 (x, y)</h3>
+                            <p id="mousePos">(0.00, 0.00)</p>
+                        </div>
+                        <div class="info-item">
+                            <h3>当前斜率 f(x, y)</h3>
+                            <p id="currentSlope">0.00</p>
+                        </div>
+                    </div>
+                    
+                    <div class="status-display" id="statusDisplay">
+                        <strong>当前状态：</strong> 等待开始延展
+                    </div>
+                    
+                    <h3 style="margin-bottom: 10px; color: #2c3e50;">已绘制积分曲线：</h3>
+                    <div class="curves-list" id="curvesList">
+                        <!-- 曲线信息将通过JavaScript动态生成 -->
+                        <p style="color:#666; text-align:center; padding:20px;">暂无积分曲线</p>
+                    </div>
+                    
+                    <div class="legend" id="legendContainer">
+                        <!-- 图例将通过JavaScript动态生成 -->
+                    </div>
+                </div>
+                
+                <div class="instructions">
+                    <h3>使用说明</h3>
+                    <ul>
+                        <li><strong>设置初值点</strong>：在画布上点击任意位置，该点将作为积分曲线的初值点。</li>
+                        <li><strong>开始延展</strong>：点击"开始延展"按钮，观察积分曲线从初值点向左右两个方向逐步生长。</li>
+                        <li><strong>边界检测</strong>：曲线延展会持续进行，直到碰到定义区域的边界或达到最大步数限制。</li>
+                        <li><strong>多曲线对比</strong>：可以绘制多条从不同初值点出发的积分曲线，最多5条。</li>
+                        <li><strong>教学重点</strong>：观察不同方程解的延展特性，理解"最大存在区间"的概念。</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <footer>
+            <p>解的延展与存在区间动态演示器 | 《常微分方程》教学辅助工具 | 基于 HTML5 Canvas 与 JavaScript 实现</p>
+        </footer>
+    </div>
+
+    <script>
+	// 检查用户是否已登录
+if (sessionStorage.getItem("allow") !== "ok") {
+    window.location.href = "index.html";
+}
+        // 主应用程序状态和配置
+        const AppState = {
+            // 当前方程和区域
+            currentFunc: null,
+            xMin: -3,
+            xMax: 3,
+            yMin: -3,
+            yMax: 3,
+            
+            // 视图变换
+            viewOffsetX: 0,
+            viewOffsetY: 0,
+            viewScale: 1,
+            
+            // 交互状态
+            isDragging: false,
+            lastMouseX: 0,
+            lastMouseY: 0,
+            mouseDownX: 0,
+            mouseDownY: 0,
+            dragThreshold: 5,
+            
+            // 动画状态
+            isAnimating: false,
+            animationId: null,
+            animationSpeed: 3, // 1-5，对应不同的帧间隔
+            
+            // 曲线数据
+            curves: [], // 每条曲线包含：id, color, pointsLeft, pointsRight, x0, y0, isActive, isComplete
+            maxCurves: 5,
+            currentCurveId: null,
+            curveColors: [
+                '#3498db', '#e74c3c', '#2ecc71', '#9b59b6', '#f39c12'
+            ],
+            
+            // 数值积分参数
+            stepSize: 0.05,
+            maxStepsPerDirection: 1000,
+            
+            // 显示控制
+            showRegion: true,
+            showGrid: true,
+            showArrows: true,
+            showFrontier: true
+        };
+
+        // DOM 元素引用
+        const canvas = document.getElementById('mainCanvas');
+        const ctx = canvas.getContext('2d');
+        const equationInput = document.getElementById('equationInput');
+        const xminInput = document.getElementById('xmin');
+        const xmaxInput = document.getElementById('xmax');
+        const yminInput = document.getElementById('ymin');
+        const ymaxInput = document.getElementById('ymax');
+        const autoRegionCheck = document.getElementById('autoRegion');
+        const x0Input = document.getElementById('x0');
+        const y0Input = document.getElementById('y0');
+        const stepSlider = document.getElementById('stepSlider');
+        const stepValue = document.getElementById('stepValue');
+        const speedSlider = document.getElementById('speedSlider');
+        const speedValue = document.getElementById('speedValue');
+        const startBtn = document.getElementById('startBtn');
+        const pauseBtn = document.getElementById('pauseBtn');
+        const singleStepBtn = document.getElementById('singleStep');
+        const resetBtn = document.getElementById('resetBtn');
+        const clearAllBtn = document.getElementById('clearAll');
+        const showRegionCheck = document.getElementById('showRegion');
+        const showGridCheck = document.getElementById('showGrid');
+        const showArrowsCheck = document.getElementById('showArrows');
+        const showFrontierCheck = document.getElementById('showFrontier');
+        const exampleButtons = [
+            document.getElementById('example1'),
+            document.getElementById('example2'),
+            document.getElementById('example3'),
+            document.getElementById('example4'),
+            document.getElementById('example5'),
+            document.getElementById('example6')
+        ];
+        const currentEquationSpan = document.getElementById('currentEquation');
+        const currentRegionSpan = document.getElementById('currentRegion');
+        const mousePosSpan = document.getElementById('mousePos');
+        const currentSlopeSpan = document.getElementById('currentSlope');
+        const statusDisplay = document.getElementById('statusDisplay');
+        const curvesList = document.getElementById('curvesList');
+        const legendContainer = document.getElementById('legendContainer');
+
+        // 颜色方案
+        const Colors = {
+            region: 'rgba(52, 152, 219, 0.1)',
+            regionBorder: 'rgba(52, 152, 219, 0.8)',
+            grid: '#e0e0e0',
+            axis: '#000',
+            frontier: '#e74c3c',
+            arrow: '#333'
+        };
+
+        // 核心函数：安全地解析和计算数学表达式
+        function createFunctionFromExpression(expr) {
+            try {
+                const compiled = math.compile(expr);
+                return function(x, y) {
+                    try {
+                        return compiled.evaluate({x: x, y: y});
+                    } catch (err) {
+                        return NaN;
+                    }
+                };
+            } catch (err) {
+                console.error("表达式解析失败:", err.message);
+                alert(`表达式解析错误：${err.message}。请检查数学表达式。`);
+                return (x, y) => 0;
+            }
+        }
+
+        // 四阶龙格-库塔法
+        function rungeKutta4Step(f, x, y, h) {
+            const k1 = f(x, y);
+            if (isNaN(k1)) return {x: x + h, y: NaN};
+            
+            const k2 = f(x + h/2, y + h/2 * k1);
+            const k3 = f(x + h/2, y + h/2 * k2);
+            const k4 = f(x + h, y + h * k3);
+            
+            const yNew = y + h/6 * (k1 + 2*k2 + 2*k3 + k4);
+            return {x: x + h, y: yNew};
+        }
+
+        // 检查点是否在区域内
+        function isPointInRegion(x, y) {
+            return x >= AppState.xMin && x <= AppState.xMax && 
+                   y >= AppState.yMin && y <= AppState.yMax;
+        }
+
+        // 获取边界类型
+        function getBoundaryType(x, y) {
+            if (x <= AppState.xMin) return "左边界";
+            if (x >= AppState.xMax) return "右边界";
+            if (y <= AppState.yMin) return "下边界";
+            if (y >= AppState.yMax) return "上边界";
+            return null;
+        }
+
+        // 创建新曲线
+        function createNewCurve(x0, y0) {
+            if (AppState.curves.length >= AppState.maxCurves) {
+                alert(`最多只能绘制 ${AppState.maxCurves} 条积分曲线。请先清除一些曲线。`);
+                return null;
+            }
+            
+            const curveId = Date.now();
+            const color = AppState.curveColors[AppState.curves.length % AppState.curveColors.length];
+            
+            const curve = {
+                id: curveId,
+                color: color,
+                x0: x0,
+                y0: y0,
+                pointsLeft: [[x0, y0]],  // 向左延展的点，从初值点开始
+                pointsRight: [[x0, y0]], // 向右延展的点，从初值点开始
+                isActive: true,
+                isComplete: false,
+                leftComplete: false,
+                rightComplete: false,
+                leftBoundary: null,
+                rightBoundary: null
+            };
+            
+            AppState.curves.push(curve);
+            AppState.currentCurveId = curveId;
+            updateCurvesList();
+            updateLegend();
+            return curve;
+        }
+
+        // 单步延展当前曲线
+        function extendCurveSingleStep(curve) {
+            if (!curve || !curve.isActive || curve.isComplete) return;
+            
+            const f = AppState.currentFunc;
+            let extended = false;
+            
+            // 向左延展
+            if (!curve.leftComplete && curve.pointsLeft.length > 0) {
+                const lastPoint = curve.pointsLeft[curve.pointsLeft.length - 1];
+                const newPoint = rungeKutta4Step(f, lastPoint[0], lastPoint[1], -AppState.stepSize);
+                
+                if (!isNaN(newPoint.y) && isPointInRegion(newPoint.x, newPoint.y)) {
+                    curve.pointsLeft.push([newPoint.x, newPoint.y]);
+                    extended = true;
+                    
+                    // 检查是否接近边界
+                    if (newPoint.x <= AppState.xMin + 0.01 || newPoint.x >= AppState.xMax - 0.01 ||
+                        newPoint.y <= AppState.yMin + 0.01 || newPoint.y >= AppState.yMax - 0.01) {
+                        curve.leftBoundary = getBoundaryType(newPoint.x, newPoint.y);
+                    }
+                } else {
+                    curve.leftComplete = true;
+                    curve.leftBoundary = getBoundaryType(lastPoint[0], lastPoint[1]);
+                }
+                
+                // 检查步数限制
+                if (curve.pointsLeft.length > AppState.maxStepsPerDirection) {
+                    curve.leftComplete = true;
+                }
+            }
+            
+            // 向右延展
+            if (!curve.rightComplete && curve.pointsRight.length > 0) {
+                const lastPoint = curve.pointsRight[curve.pointsRight.length - 1];
+                const newPoint = rungeKutta4Step(f, lastPoint[0], lastPoint[1], AppState.stepSize);
+                
+                if (!isNaN(newPoint.y) && isPointInRegion(newPoint.x, newPoint.y)) {
+                    curve.pointsRight.push([newPoint.x, newPoint.y]);
+                    extended = true;
+                    
+                    // 检查是否接近边界
+                    if (newPoint.x <= AppState.xMin + 0.01 || newPoint.x >= AppState.xMax - 0.01 ||
+                        newPoint.y <= AppState.yMin + 0.01 || newPoint.y >= AppState.yMax - 0.01) {
+                        curve.rightBoundary = getBoundaryType(newPoint.x, newPoint.y);
+                    }
+                } else {
+                    curve.rightComplete = true;
+                    curve.rightBoundary = getBoundaryType(lastPoint[0], lastPoint[1]);
+                }
+                
+                // 检查步数限制
+                if (curve.pointsRight.length > AppState.maxStepsPerDirection) {
+                    curve.rightComplete = true;
+                }
+            }
+            
+            // 检查曲线是否完成
+            if (curve.leftComplete && curve.rightComplete) {
+                curve.isComplete = true;
+                curve.isActive = false;
+                updateStatusDisplay();
+            }
+            
+            if (extended) {
+                redrawAll();
+                updateCurvesList();
+            }
+            
+            return extended;
+        }
+
+        // 坐标转换函数
+        function logicalToCanvas(lx, ly) {
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const x = centerX + (lx - AppState.viewOffsetX) * 50 * AppState.viewScale;
+            const y = centerY - (ly - AppState.viewOffsetY) * 50 * AppState.viewScale;
+            return {x, y};
+        }
+        
+        function canvasToLogical(cx, cy) {
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const lx = (cx - centerX) / (50 * AppState.viewScale) + AppState.viewOffsetX;
+            const ly = (centerY - cy) / (50 * AppState.viewScale) + AppState.viewOffsetY;
+            return {x: lx, y: ly};
+        }
+
+        // 绘图函数
+        function drawGridAndAxes() {
+            if (!AppState.showGrid) return;
+            
+            ctx.save();
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            ctx.translate(centerX, centerY);
+            ctx.scale(1, -1);
+            ctx.scale(50 * AppState.viewScale, 50 * AppState.viewScale);
+            ctx.translate(-AppState.viewOffsetX, -AppState.viewOffsetY);
+            
+            const logicalWidth = canvas.width / (50 * AppState.viewScale);
+            const logicalHeight = canvas.height / (50 * AppState.viewScale);
+            const left = AppState.viewOffsetX - logicalWidth / 2;
+            const right = AppState.viewOffsetX + logicalWidth / 2;
+            const bottom = AppState.viewOffsetY - logicalHeight / 2;
+            const top = AppState.viewOffsetY + logicalHeight / 2;
+            
+            // 绘制网格
+            ctx.strokeStyle = Colors.grid;
+            ctx.lineWidth = 1 / (50 * AppState.viewScale);
+            ctx.beginPath();
+            
+            const xStart = Math.ceil(left);
+            const xEnd = Math.floor(right);
+            for (let x = xStart; x <= xEnd; x++) {
+                ctx.moveTo(x, bottom);
+                ctx.lineTo(x, top);
+            }
+            
+            const yStart = Math.ceil(bottom);
+            const yEnd = Math.floor(top);
+            for (let y = yStart; y <= yEnd; y++) {
+                ctx.moveTo(left, y);
+                ctx.lineTo(right, y);
+            }
+            ctx.stroke();
+            
+            // 绘制坐标轴
+            ctx.strokeStyle = Colors.axis;
+            ctx.lineWidth = 2 / (50 * AppState.viewScale);
+            ctx.beginPath();
+            ctx.moveTo(left, 0);
+            ctx.lineTo(right, 0);
+            ctx.moveTo(0, bottom);
+            ctx.lineTo(0, top);
+            ctx.stroke();
+            
+            ctx.restore();
+            
+            // 绘制坐标轴标签
+            drawAxisLabels();
+        }
+        
+        function drawAxisLabels() {
+            ctx.save();
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
+            
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const logicalWidth = canvas.width / (50 * AppState.viewScale);
+            const logicalHeight = canvas.height / (50 * AppState.viewScale);
+            
+            const left = AppState.viewOffsetX - logicalWidth / 2;
+            const right = AppState.viewOffsetX + logicalWidth / 2;
+            const bottom = AppState.viewOffsetY - logicalHeight / 2;
+            const top = AppState.viewOffsetY + logicalHeight / 2;
+            
+            ctx.font = '12px Arial';
+            ctx.fillStyle = Colors.axis;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'top';
+            
+            const xTickStart = Math.ceil(left);
+            const xTickEnd = Math.floor(right);
+            for (let x = xTickStart; x <= xTickEnd; x++) {
+                if (Math.abs(x) > 0.01) {
+                    const canvasPos = logicalToCanvas(x, 0);
+                    ctx.fillText(x.toString(), canvasPos.x, canvasPos.y + 5);
+                }
+            }
+            
+            ctx.textAlign = 'right';
+            ctx.textBaseline = 'middle';
+            const yTickStart = Math.ceil(bottom);
+            const yTickEnd = Math.floor(top);
+            for (let y = yTickStart; y <= yTickEnd; y++) {
+                if (Math.abs(y) > 0.01) {
+                    const canvasPos = logicalToCanvas(0, y);
+                    ctx.fillText(y.toString(), canvasPos.x - 5, canvasPos.y);
+                }
+            }
+            
+            ctx.textAlign = 'left';
+            ctx.textBaseline = 'top';
+            const originPos = logicalToCanvas(0, 0);
+            ctx.fillText('O', originPos.x + 5, originPos.y + 5);
+            
+            ctx.restore();
+        }
+        
+        function drawRegion() {
+            if (!AppState.showRegion) return;
+            
+            ctx.save();
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
+            
+            const topLeft = logicalToCanvas(AppState.xMin, AppState.yMax);
+            const bottomRight = logicalToCanvas(AppState.xMax, AppState.yMin);
+            
+            // 绘制矩形边界
+            ctx.strokeStyle = Colors.regionBorder;
+            ctx.lineWidth = 2;
+            ctx.setLineDash([5, 5]);
+            ctx.strokeRect(topLeft.x, topLeft.y, bottomRight.x - topLeft.x, bottomRight.y - topLeft.y);
+            ctx.setLineDash([]);
+            
+            // 绘制边界标签
+            ctx.fillStyle = Colors.regionBorder;
+            ctx.font = '12px Arial';
+            ctx.textAlign = 'center';
+            
+            // 上边界
+            const topCenter = logicalToCanvas((AppState.xMin + AppState.xMax) / 2, AppState.yMax);
+            ctx.fillText('上边界', topCenter.x, topCenter.y - 10);
+            
+            // 下边界
+            const bottomCenter = logicalToCanvas((AppState.xMin + AppState.xMax) / 2, AppState.yMin);
+            ctx.fillText('下边界', bottomCenter.x, bottomCenter.y + 20);
+            
+            // 左边界
+            const leftCenter = logicalToCanvas(AppState.xMin, (AppState.yMin + AppState.yMax) / 2);
+            ctx.textAlign = 'right';
+            ctx.fillText('左边界', leftCenter.x - 10, leftCenter.y);
+            
+            // 右边界
+            const rightCenter = logicalToCanvas(AppState.xMax, (AppState.yMin + AppState.yMax) / 2);
+            ctx.textAlign = 'left';
+            ctx.fillText('右边界', rightCenter.x + 10, rightCenter.y);
+            
+            ctx.restore();
+        }
+        
+        function drawCurves() {
+            if (AppState.curves.length === 0) return;
+            
+            ctx.save();
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            ctx.translate(centerX, centerY);
+            ctx.scale(1, -1);
+            ctx.scale(50 * AppState.viewScale, 50 * AppState.viewScale);
+            ctx.translate(-AppState.viewOffsetX, -AppState.viewOffsetY);
+            
+            AppState.curves.forEach(curve => {
+                // 绘制向左延展的曲线
+                if (curve.pointsLeft.length > 1) {
+                    ctx.strokeStyle = curve.color;
+                    ctx.lineWidth = 2.5 / (50 * AppState.viewScale);
+                    ctx.lineJoin = 'round';
+                    ctx.lineCap = 'round';
+                    ctx.beginPath();
+                    
+                    const firstPoint = curve.pointsLeft[0];
+                    ctx.moveTo(firstPoint[0], firstPoint[1]);
+                    for (let i = 1; i < curve.pointsLeft.length; i++) {
+                        const pt = curve.pointsLeft[i];
+                        ctx.lineTo(pt[0], pt[1]);
+                    }
+                    ctx.stroke();
+                }
+                
+                // 绘制向右延展的曲线
+                if (curve.pointsRight.length > 1) {
+                    ctx.strokeStyle = curve.color;
+                    ctx.lineWidth = 2.5 / (50 * AppState.viewScale);
+                    ctx.lineJoin = 'round';
+                    ctx.lineCap = 'round';
+                    ctx.beginPath();
+                    
+                    const firstPoint = curve.pointsRight[0];
+                    ctx.moveTo(firstPoint[0], firstPoint[1]);
+                    for (let i = 1; i < curve.pointsRight.length; i++) {
+                        const pt = curve.pointsRight[i];
+                        ctx.lineTo(pt[0], pt[1]);
+                    }
+                    ctx.stroke();
+                }
+                
+                // 绘制初值点
+                ctx.fillStyle = curve.color;
+                ctx.beginPath();
+                ctx.arc(curve.x0, curve.y0, 0.1, 0, 2 * Math.PI);
+                ctx.fill();
+                
+                // 绘制延展前沿点
+                if (AppState.showFrontier && curve.isActive) {
+                    ctx.fillStyle = Colors.frontier;
+                    
+                    // 左前沿
+                    if (curve.pointsLeft.length > 0 && !curve.leftComplete) {
+                        const lastLeft = curve.pointsLeft[curve.pointsLeft.length - 1];
+                        ctx.beginPath();
+                        ctx.arc(lastLeft[0], lastLeft[1], 0.12, 0, 2 * Math.PI);
+                        ctx.fill();
+                    }
+                    
+                    // 右前沿
+                    if (curve.pointsRight.length > 0 && !curve.rightComplete) {
+                        const lastRight = curve.pointsRight[curve.pointsRight.length - 1];
+                        ctx.beginPath();
+                        ctx.arc(lastRight[0], lastRight[1], 0.12, 0, 2 * Math.PI);
+                        ctx.fill();
+                    }
+                }
+                
+                // 绘制方向箭头
+                if (AppState.showArrows && curve.isActive) {
+                    ctx.fillStyle = Colors.arrow;
+                    
+                    // 左方向箭头
+                    if (curve.pointsLeft.length > 1 && !curve.leftComplete) {
+                        const lastLeft = curve.pointsLeft[curve.pointsLeft.length - 1];
+                        const prevLeft = curve.pointsLeft[curve.pointsLeft.length - 2];
+                        drawArrow(ctx, prevLeft[0], prevLeft[1], lastLeft[0], lastLeft[1], 0.2);
+                    }
+                    
+                    // 右方向箭头
+                    if (curve.pointsRight.length > 1 && !curve.rightComplete) {
+                        const lastRight = curve.pointsRight[curve.pointsRight.length - 1];
+                        const prevRight = curve.pointsRight[curve.pointsRight.length - 2];
+                        drawArrow(ctx, prevRight[0], prevRight[1], lastRight[0], lastRight[1], 0.2);
+                    }
+                }
+            });
+            
+            ctx.restore();
+        }
+        
+        function drawArrow(ctx, x1, y1, x2, y2, size) {
+            const angle = Math.atan2(y2 - y1, x2 - x1);
+            
+            ctx.save();
+            ctx.translate(x2, y2);
+            ctx.rotate(angle);
+            
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.lineTo(-size, size/2);
+            ctx.lineTo(-size, -size/2);
+            ctx.closePath();
+            ctx.fill();
+            
+            ctx.restore();
+        }
+        
+        function redrawAll() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawGridAndAxes();
+            drawRegion();
+            drawCurves();
+        }
+        
+        function updateEquation() {
+            const expr = equationInput.value.trim();
+            try {
+                AppState.currentFunc = createFunctionFromExpression(expr);
+                currentEquationSpan.textContent = `dy/dx = ${expr}`;
+                
+                // 如果启用了自动确定区域
+                if (autoRegionCheck.checked) {
+                    autoDetermineRegion(expr);
+                }
+                
+                updateRegionDisplay();
+                redrawAll();
+            } catch (err) {
+                alert("无法解析方程表达式。");
+            }
+        }
+        
+        function autoDetermineRegion(expr) {
+            // 根据方程特性自动设置合适的区域
+            if (expr === 'y^2') {
+                AppState.xMin = -3; AppState.xMax = 3;
+                AppState.yMin = -3; AppState.yMax = 3;
+            } else if (expr === '1+y^2') {
+                AppState.xMin = -2; AppState.xMax = 2;
+                AppState.yMin = -3; AppState.yMax = 3;
+            } else if (expr === 'y' || expr === '-y') {
+                AppState.xMin = -3; AppState.xMax = 3;
+                AppState.yMin = -3; AppState.yMax = 3;
+            } else if (expr === 'x^2+y^2') {
+                AppState.xMin = -2; AppState.xMax = 2;
+                AppState.yMin = -2; AppState.yMax = 2;
+            } else if (expr.includes('sqrt')) {
+                AppState.xMin = -3; AppState.xMax = 3;
+                AppState.yMin = -1; AppState.yMax = 3;
+            } else {
+                // 默认区域
+                AppState.xMin = -3; AppState.xMax = 3;
+                AppState.yMin = -3; AppState.yMax = 3;
+            }
+            
+            xminInput.value = AppState.xMin;
+            xmaxInput.value = AppState.xMax;
+            yminInput.value = AppState.yMin;
+            ymaxInput.value = AppState.yMax;
+        }
+        
+        function updateRegion() {
+            AppState.xMin = parseFloat(xminInput.value);
+            AppState.xMax = parseFloat(xmaxInput.value);
+            AppState.yMin = parseFloat(yminInput.value);
+            AppState.yMax = parseFloat(ymaxInput.value);
+            updateRegionDisplay();
+            redrawAll();
+        }
+        
+        function updateRegionDisplay() {
+            currentRegionSpan.textContent = `[${AppState.xMin.toFixed(1)}, ${AppState.xMax.toFixed(1)}] × [${AppState.yMin.toFixed(1)}, ${AppState.yMax.toFixed(1)}]`;
+        }
+        
+        function updateCurvesList() {
+            curvesList.innerHTML = '';
+            
+            if (AppState.curves.length === 0) {
+                curvesList.innerHTML = '<p style="color:#666; text-align:center; padding:20px;">暂无积分曲线</p>';
+                return;
+            }
+            
+            AppState.curves.forEach((curve, index) => {
+                const div = document.createElement('div');
+                div.className = 'curve-item';
+                
+                // 计算区间信息
+                const leftX = curve.pointsLeft.length > 0 ? curve.pointsLeft[curve.pointsLeft.length - 1][0] : curve.x0;
+                const rightX = curve.pointsRight.length > 0 ? curve.pointsRight[curve.pointsRight.length - 1][0] : curve.x0;
+                const intervalLength = rightX - leftX;
+                
+                let statusText = curve.isComplete ? '已完成' : '延展中';
+                if (curve.leftBoundary) statusText += `, 左:${curve.leftBoundary}`;
+                if (curve.rightBoundary) statusText += `, 右:${curve.rightBoundary}`;
+                
+                div.innerHTML = `
+                    <div class="curve-color" style="background-color: ${curve.color}"></div>
+                    <div class="curve-info">
+                        <div><strong>曲线 ${index+1}</strong> (${statusText})</div>
+                        <div style="font-size:0.8em; color:#666;">
+                            初值: (${curve.x0.toFixed(2)}, ${curve.y0.toFixed(2)}) | 
+                            区间: [${leftX.toFixed(2)}, ${rightX.toFixed(2)}] (长度: ${intervalLength.toFixed(2)})
+                        </div>
+                    </div>
+                `;
+                
+                curvesList.appendChild(div);
+            });
+        }
+        
+        function updateStatusDisplay() {
+            const currentCurve = AppState.curves.find(c => c.id === AppState.currentCurveId);
+            
+            if (!currentCurve) {
+                statusDisplay.innerHTML = `<strong>当前状态：</strong> 等待开始延展`;
+                return;
+            }
+            
+            if (currentCurve.isComplete) {
+                let boundaries = [];
+                if (currentCurve.leftBoundary) boundaries.push(`左:${currentCurve.leftBoundary}`);
+                if (currentCurve.rightBoundary) boundaries.push(`右:${currentCurve.rightBoundary}`);
+                
+                const boundaryText = boundaries.length > 0 ? `，到达${boundaries.join('，')}` : '';
+                statusDisplay.innerHTML = `<strong>当前状态：</strong> 延展完成${boundaryText}`;
+            } else if (currentCurve.isActive) {
+                const leftPoint = currentCurve.pointsLeft[currentCurve.pointsLeft.length - 1];
+                const rightPoint = currentCurve.pointsRight[currentCurve.pointsRight.length - 1];
+                
+                let leftText = currentCurve.leftComplete ? '左:已完成' : `左:(${leftPoint[0].toFixed(2)}, ${leftPoint[1].toFixed(2)})`;
+                let rightText = currentCurve.rightComplete ? '右:已完成' : `右:(${rightPoint[0].toFixed(2)}, ${rightPoint[1].toFixed(2)})`;
+                
+                statusDisplay.innerHTML = `<strong>当前状态：</strong> 延展中 | ${leftText} | ${rightText}`;
+            } else {
+                statusDisplay.innerHTML = `<strong>当前状态：</strong> 已暂停`;
+            }
+        }
+        
+        function updateLegend() {
+            legendContainer.innerHTML = '';
+            
+            AppState.curves.forEach((curve, index) => {
+                const div = document.createElement('div');
+                div.className = 'legend-item';
+                div.innerHTML = `
+                    <div class="legend-color" style="background-color: ${curve.color}"></div>
+                    <div class="legend-text">曲线 ${index+1}</div>
+                `;
+                legendContainer.appendChild(div);
+            });
+            
+            if (AppState.showFrontier) {
+                const div = document.createElement('div');
+                div.className = 'legend-item';
+                div.innerHTML = `
+                    <div class="legend-color" style="background-color: ${Colors.frontier}"></div>
+                    <div class="legend-text">延展前沿点</div>
+                `;
+                legendContainer.appendChild(div);
+            }
+            
+            // 注意：这里已经移除了边界点的图例
+        }
+        
+        function startAnimation() {
+            if (AppState.isAnimating) return;
+            
+            // 如果没有当前曲线，创建一条
+            if (!AppState.currentCurveId) {
+                const x0 = parseFloat(x0Input.value);
+                const y0 = parseFloat(y0Input.value);
+                createNewCurve(x0, y0);
+            }
+            
+            AppState.isAnimating = true;
+            startBtn.disabled = true;
+            pauseBtn.disabled = false;
+            
+            const speedMap = {1: 100, 2: 50, 3: 30, 4: 20, 5: 10};
+            const interval = speedMap[AppState.animationSpeed] || 30;
+            
+            function animationStep() {
+                if (!AppState.isAnimating) return;
+                
+                const currentCurve = AppState.curves.find(c => c.id === AppState.currentCurveId);
+                if (currentCurve && currentCurve.isActive) {
+                    extendCurveSingleStep(currentCurve);
+                    updateStatusDisplay();
+                    
+                    if (currentCurve.isComplete) {
+                        stopAnimation();
+                    } else {
+                        setTimeout(animationStep, interval);
+                    }
+                } else {
+                    stopAnimation();
+                }
+            }
+            
+            animationStep();
+        }
+        
+        function stopAnimation() {
+            AppState.isAnimating = false;
+            startBtn.disabled = false;
+            pauseBtn.disabled = true;
+        }
+        
+        function resetCurrentCurve() {
+            const currentCurve = AppState.curves.find(c => c.id === AppState.currentCurveId);
+            if (currentCurve) {
+                const index = AppState.curves.indexOf(currentCurve);
+                AppState.curves.splice(index, 1);
+                AppState.currentCurveId = null;
+                updateCurvesList();
+                updateLegend();
+                updateStatusDisplay();
+                redrawAll();
+            }
+        }
+        
+        function updateViewFromInputs() {
+            const x0 = parseFloat(x0Input.value);
+            const xMin = x0 - 3;
+            const xMax = x0 + 3;
+            const yMin = -3;
+            const yMax = 3;
+            
+            AppState.viewOffsetX = (xMin + xMax) / 2;
+            AppState.viewOffsetY = (yMin + yMax) / 2;
+            const scaleX = canvas.width / ((xMax - xMin) * 50);
+            const scaleY = canvas.height / ((yMax - yMin) * 50);
+            AppState.viewScale = Math.min(scaleX, scaleY) * 0.9;
+            
+            redrawAll();
+        }
+
+        // 事件监听
+        equationInput.addEventListener('change', updateEquation);
+        
+        xminInput.addEventListener('change', updateRegion);
+        xmaxInput.addEventListener('change', updateRegion);
+        yminInput.addEventListener('change', updateRegion);
+        ymaxInput.addEventListener('change', updateRegion);
+        
+        autoRegionCheck.addEventListener('change', () => {
+            if (autoRegionCheck.checked) {
+                autoDetermineRegion(equationInput.value);
+                updateRegion();
+            }
+        });
+        
+        x0Input.addEventListener('change', () => {
+            if (AppState.currentCurveId) {
+                const currentCurve = AppState.curves.find(c => c.id === AppState.currentCurveId);
+                if (currentCurve) {
+                    currentCurve.x0 = parseFloat(x0Input.value);
+                    updateCurvesList();
+                    redrawAll();
+                }
+            }
+        });
+        
+        y0Input.addEventListener('change', () => {
+            if (AppState.currentCurveId) {
+                const currentCurve = AppState.curves.find(c => c.id === AppState.currentCurveId);
+                if (currentCurve) {
+                    currentCurve.y0 = parseFloat(y0Input.value);
+                    updateCurvesList();
+                    redrawAll();
+                }
+            }
+        });
+        
+        // 示例按钮
+        exampleButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                equationInput.value = btn.dataset.equation;
+                xminInput.value = btn.dataset.xmin;
+                xmaxInput.value = btn.dataset.xmax;
+                yminInput.value = btn.dataset.ymin;
+                ymaxInput.value = btn.dataset.ymax;
+                x0Input.value = btn.dataset.x0;
+                y0Input.value = btn.dataset.y0;
+                
+                AppState.xMin = parseFloat(btn.dataset.xmin);
+                AppState.xMax = parseFloat(btn.dataset.xmax);
+                AppState.yMin = parseFloat(btn.dataset.ymin);
+                AppState.yMax = parseFloat(btn.dataset.ymax);
+                
+                updateEquation();
+                updateRegionDisplay();
+                updateViewFromInputs();
+            });
+        });
+        
+        stepSlider.addEventListener('input', () => {
+            AppState.stepSize = parseFloat(stepSlider.value);
+            stepValue.textContent = AppState.stepSize.toFixed(2);
+        });
+        
+        speedSlider.addEventListener('input', () => {
+            AppState.animationSpeed = parseInt(speedSlider.value);
+            const speedTexts = {1: '极慢', 2: '慢速', 3: '中速', 4: '快速', 5: '极快'};
+            speedValue.textContent = speedTexts[AppState.animationSpeed] || '中速';
+        });
+        
+        startBtn.addEventListener('click', startAnimation);
+        pauseBtn.addEventListener('click', stopAnimation);
+        singleStepBtn.addEventListener('click', () => {
+            if (!AppState.currentCurveId) {
+                const x0 = parseFloat(x0Input.value);
+                const y0 = parseFloat(y0Input.value);
+                createNewCurve(x0, y0);
+            }
+            
+            const currentCurve = AppState.curves.find(c => c.id === AppState.currentCurveId);
+            if (currentCurve && currentCurve.isActive) {
+                extendCurveSingleStep(currentCurve);
+                updateStatusDisplay();
+            }
+        });
+        
+        resetBtn.addEventListener('click', resetCurrentCurve);
+        clearAllBtn.addEventListener('click', () => {
+            stopAnimation();
+            AppState.curves = [];
+            AppState.currentCurveId = null;
+            updateCurvesList();
+            updateLegend();
+            updateStatusDisplay();
+            redrawAll();
+        });
+        
+        showRegionCheck.addEventListener('change', () => {
+            AppState.showRegion = showRegionCheck.checked;
+            redrawAll();
+        });
+        
+        showGridCheck.addEventListener('change', () => {
+            AppState.showGrid = showGridCheck.checked;
+            redrawAll();
+        });
+        
+        showArrowsCheck.addEventListener('change', () => {
+            AppState.showArrows = showArrowsCheck.checked;
+            redrawAll();
+        });
+        
+        showFrontierCheck.addEventListener('change', () => {
+            AppState.showFrontier = showFrontierCheck.checked;
+            updateLegend();
+            redrawAll();
+        });
+        
+        // 鼠标事件
+        canvas.addEventListener('mousedown', (e) => {
+            AppState.isDragging = false;
+            AppState.lastMouseX = e.clientX;
+            AppState.lastMouseY = e.clientY;
+            AppState.mouseDownX = e.clientX;
+            AppState.mouseDownY = e.clientY;
+            canvas.style.cursor = 'grabbing';
+        });
+        
+        canvas.addEventListener('mousemove', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+            const logicalPos = canvasToLogical(mouseX, mouseY);
+            mousePosSpan.textContent = `(${logicalPos.x.toFixed(2)}, ${logicalPos.y.toFixed(2)})`;
+            
+            if (AppState.currentFunc) {
+                const slope = AppState.currentFunc(logicalPos.x, logicalPos.y);
+                currentSlopeSpan.textContent = isNaN(slope) || !isFinite(slope) ? '未定义' : slope.toFixed(2);
+            }
+            
+            if (AppState.mouseDownX !== 0 && AppState.mouseDownY !== 0) {
+                const deltaX = Math.abs(e.clientX - AppState.mouseDownX);
+                const deltaY = Math.abs(e.clientY - AppState.mouseDownY);
+                const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+                
+                if (distance > AppState.dragThreshold) {
+                    AppState.isDragging = true;
+                }
+            }
+            
+            if (AppState.isDragging) {
+                const deltaX = e.clientX - AppState.lastMouseX;
+                const deltaY = e.clientY - AppState.lastMouseY;
+                AppState.viewOffsetX -= deltaX / (50 * AppState.viewScale);
+                AppState.viewOffsetY += deltaY / (50 * AppState.viewScale);
+                AppState.lastMouseX = e.clientX;
+                AppState.lastMouseY = e.clientY;
+                redrawAll();
+            }
+        });
+        
+        canvas.addEventListener('mouseup', (e) => {
+            if (!AppState.isDragging) {
+                // 如果是点击（没有拖拽），则设置初值点
+                const rect = canvas.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                const logicalPos = canvasToLogical(x, y);
+                
+                // 检查点是否在区域内
+                if (isPointInRegion(logicalPos.x, logicalPos.y)) {
+                    x0Input.value = logicalPos.x.toFixed(2);
+                    y0Input.value = logicalPos.y.toFixed(2);
+                    
+                    // 停止当前动画
+                    stopAnimation();
+                    
+                    // 创建新曲线
+                    createNewCurve(logicalPos.x, logicalPos.y);
+                    
+                    // 开始延展
+                    startAnimation();
+                }
+            }
+            
+            AppState.isDragging = false;
+            AppState.mouseDownX = 0;
+            AppState.mouseDownY = 0;
+            canvas.style.cursor = 'crosshair';
+        });
+        
+        canvas.addEventListener('mouseleave', () => {
+            AppState.isDragging = false;
+            AppState.mouseDownX = 0;
+            AppState.mouseDownY = 0;
+            canvas.style.cursor = 'crosshair';
+        });
+        
+        canvas.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+            const logicalPosBefore = canvasToLogical(mouseX, mouseY);
+            const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
+            AppState.viewScale *= zoomFactor;
+            const logicalPosAfter = canvasToLogical(mouseX, mouseY);
+            AppState.viewOffsetX += logicalPosBefore.x - logicalPosAfter.x;
+            AppState.viewOffsetY += logicalPosBefore.y - logicalPosAfter.y;
+            redrawAll();
+        });
+
+        // 初始化
+        function init() {
+            // 设置初始值
+            stepValue.textContent = stepSlider.value;
+            speedValue.textContent = '中速';
+            
+            // 设置初始方程
+            updateEquation();
+            
+            // 设置初始视图
+            updateViewFromInputs();
+            
+            // 初始化图例
+            updateLegend();
+        }
+        
+        // 启动应用
+        window.onload = init;
+    </script>
+</body>
+</html>
