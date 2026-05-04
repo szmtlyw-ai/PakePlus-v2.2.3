@@ -1,0 +1,1285 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>流体混合模拟器 - 教学工具</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Arial', sans-serif;
+        }
+        
+        body {
+            background-color: #f5f5f5;
+            color: #333;
+            padding: 20px;
+        }
+        
+        h2 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 20px;
+        }
+        
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: center;
+        }
+        
+        .control-panel {
+            width: 300px;
+            background-color: white;
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .visualization {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .canvas-container {
+            background-color: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        canvas {
+            border: 1px solid #ddd;
+            background-color: white;
+            border-radius: 4px;
+            display: block;
+        }
+        
+        .slider-container {
+            margin: 15px 0;
+        }
+        
+        .slider-container label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #34495e;
+        }
+        
+        .value-display {
+            display: inline-block;
+            width: 60px;
+            text-align: right;
+            font-weight: bold;
+            color: #e74c3c;
+        }
+        
+        input[type="range"] {
+            width: 200px;
+            margin-right: 10px;
+        }
+        
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin: 20px 0;
+        }
+        
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            flex: 1;
+        }
+        
+        .btn-start {
+            background-color: #2ecc71;
+            color: white;
+        }
+        
+        .btn-pause {
+            background-color: #f39c12;
+            color: white;
+        }
+        
+        .btn-reset {
+            background-color: #e74c3c;
+            color: white;
+        }
+        
+        button:disabled {
+            background-color: #bdc3c7;
+            cursor: not-allowed;
+        }
+        
+        .checkbox-container {
+            margin: 15px 0;
+        }
+        
+        .checkbox-container label {
+            display: inline-block;
+            margin-left: 5px;
+        }
+        
+        .info-panel {
+            width: 100%;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            margin-top: 20px;
+        }
+        
+        .realtime-info {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 6px;
+        }
+        
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .info-label {
+            font-weight: bold;
+            color: #34495e;
+        }
+        
+        .info-value {
+            color: #7f8c8d;
+        }
+        
+        .legend {
+            display: flex;
+            gap: 20px;
+            margin-top: 10px;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .legend-color {
+            width: 20px;
+            height: 3px;
+        }
+        
+        .concentration-color {
+            background-color: #3498db;
+        }
+        
+        .volume-color {
+            background-color: #2ecc71;
+        }
+        
+        .analytical-color {
+            background-color: #9b59b6;
+        }
+        
+        .progress-container {
+            margin: 15px 0;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 10px;
+            background-color: #ecf0f1;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background-color: #2ecc71;
+            width: 0%;
+            transition: width 0.3s;
+        }
+        
+        .progress-text {
+            text-align: center;
+            font-size: 0.9em;
+            color: #7f8c8d;
+            margin-top: 5px;
+        }
+        
+        .time-display {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            background-color: rgba(255, 255, 255, 0.9);
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 0.9em;
+            border: 1px solid #ddd;
+        }
+        
+        .math-display {
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            font-family: 'Cambria', serif;
+        }
+        
+        .status-display {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .status-item {
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        
+        .status-label {
+            font-size: 0.9em;
+            color: #7f8c8d;
+        }
+        
+        .status-value {
+            font-size: 1.1em;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        
+        @media (max-width: 1200px) {
+            .container {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .control-panel {
+                width: 100%;
+                max-width: 500px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h2>流体混合模拟器 - 浓度变化可视化</h2>
+    
+    <div class="container">
+        <!-- 左侧控制面板 -->
+        <div class="control-panel">
+            <h3>混合参数设置</h3>
+            
+            <div class="slider-container">
+                <label>初始体积 V₀: <span class="value-display" id="initialVolumeValue">100</span> L</label>
+                <input type="range" id="initialVolumeSlider" min="10" max="200" value="100" step="1">
+            </div>
+            
+            <div class="slider-container">
+                <label>初始浓度 c₀: <span class="value-display" id="initialConcentrationValue">0.0</span> g/L</label>
+                <input type="range" id="initialConcentrationSlider" min="0" max="2.0" value="0.0" step="0.1">
+            </div>
+            
+            <div class="slider-container">
+                <label>流入速率 r_in: <span class="value-display" id="inflowRateValue">5.0</span> L/min</label>
+                <input type="range" id="inflowRateSlider" min="0" max="20.0" value="5.0" step="0.5">
+            </div>
+            
+            <div class="slider-container">
+                <label>流入浓度 c_in: <span class="value-display" id="inflowConcentrationValue">1.0</span> g/L</label>
+                <input type="range" id="inflowConcentrationSlider" min="0" max="5.0" value="1.0" step="0.1">
+            </div>
+            
+            <div class="slider-container">
+                <label>流出速率 r_out: <span class="value-display" id="outflowRateValue">5.0</span> L/min</label>
+                <input type="range" id="outflowRateSlider" min="0" max="20.0" value="5.0" step="0.5">
+            </div>
+            
+            <div class="checkbox-container">
+                <input type="checkbox" id="equalRatesCheckbox" checked>
+                <label for="equalRatesCheckbox">r_out = r_in (体积恒定)</label>
+            </div>
+            
+            <div class="slider-container">
+                <label>模拟总时间 T: <span class="value-display" id="totalTimeValue">20.0</span> min</label>
+                <input type="range" id="totalTimeSlider" min="5" max="60" value="20.0" step="1.0">
+            </div>
+            
+            <div class="checkbox-container">
+                <input type="checkbox" id="showAnalyticalCheckbox">
+                <label for="showAnalyticalCheckbox">显示解析解 (当体积恒定时)</label>
+            </div>
+            
+            <div class="btn-group">
+                <button id="startBtn" class="btn-start">开始模拟</button>
+                <button id="pauseBtn" class="btn-pause" disabled>暂停</button>
+                <button id="resetBtn" class="btn-reset">重置</button>
+            </div>
+            
+            <div class="progress-container">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+                <div class="progress-text" id="progressText">时间: 0.00min / 20.00min</div>
+            </div>
+            
+            <div class="realtime-info">
+                <h4>当前状态</h4>
+                <div class="info-row">
+                    <span class="info-label">时间 t:</span>
+                    <span class="info-value" id="currentTimeValue">0.00 min</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">浓度 c(t):</span>
+                    <span class="info-value" id="currentConcentrationValue">0.000 g/L</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">体积 V(t):</span>
+                    <span class="info-value" id="currentVolumeValue">100.0 L</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">容器内溶质质量:</span>
+                    <span class="info-value" id="currentMassValue">0.00 g</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 右侧可视化区域 -->
+        <div class="visualization">
+            <!-- 容器动画 -->
+            <div class="canvas-container">
+                <h3>容器动画</h3>
+                <canvas id="tankCanvas" width="500" height="300"></canvas>
+                <div class="time-display" id="tankInfo">浓度: 0.000g/L, 体积: 100.0L</div>
+            </div>
+            
+            <!-- 浓度曲线 -->
+            <div class="canvas-container">
+                <h3>浓度与体积变化曲线</h3>
+                <canvas id="plotCanvas" width="500" height="300"></canvas>
+                <div class="legend">
+                    <div class="legend-item">
+                        <div class="legend-color concentration-color"></div>
+                        <div>浓度 c(t)</div>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color volume-color"></div>
+                        <div>体积 V(t)</div>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color analytical-color"></div>
+                        <div>解析解 (当体积恒定)</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 底部信息面板 -->
+    <div class="info-panel">
+        <h3>系统信息与微分方程</h3>
+        
+        <div class="math-display">
+            <div id="diffEquation">微分方程: d(Vc)/dt = r_in·c_in - r_out·c, 其中 V 是体积，c 是浓度</div>
+            <div id="volumeEquation">体积变化: dV/dt = r_in - r_out</div>
+        </div>
+        
+        <div class="status-display">
+            <div class="status-item">
+                <div class="status-label">混合状态</div>
+                <div class="status-value" id="mixingStatus">未开始</div>
+            </div>
+            <div class="status-item">
+                <div class="status-label">最终浓度 (如果体积恒定)</div>
+                <div class="status-value" id="finalConcentration">1.000 g/L</div>
+            </div>
+            <div class="status-item">
+                <div class="status-label">最终体积</div>
+                <div class="status-value" id="finalVolume">100.0 L</div>
+            </div>
+            <div class="status-item">
+                <div class="status-label">时间常数 τ (如果体积恒定)</div>
+                <div class="status-value" id="timeConstant">20.00 min</div>
+            </div>
+        </div>
+        
+        <div class="info-row">
+            <span class="info-label">当前时间步长 Δt:</span>
+            <span class="info-value" id="timeStepValue">0.01 min</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">计算步数:</span>
+            <span class="info-value" id="stepCountValue">0 / 0</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">数值方法:</span>
+            <span class="info-value">四阶龙格-库塔法</span>
+        </div>
+    </div>
+
+    <script>
+	// 检查用户是否已登录
+if (sessionStorage.getItem("allow") !== "ok") {
+    window.location.href = "index.html";
+}
+        // 应用程序状态
+        const AppState = {
+            // 混合参数
+            V0: 100,        // 初始体积 (L)
+            c0: 0,          // 初始浓度 (g/L)
+            rin: 5.0,       // 流入速率 (L/min)
+            cin: 1.0,       // 流入浓度 (g/L)
+            rout: 5.0,      // 流出速率 (L/min)
+            T: 20.0,        // 模拟总时间 (min)
+            equalRates: true, // 流出速率是否等于流入速率
+            
+            // 模拟状态
+            isRunning: false,
+            currentTime: 0.0,
+            currentStep: 0,
+            totalSteps: 0,
+            
+            // 数值解
+            timeData: [],
+            concentrationData: [],
+            volumeData: [],
+            analyticalData: [], // 解析解 (当体积恒定时)
+            
+            // 视图控制
+            showAnalytical: false,
+            
+            // 动画控制
+            animationId: null
+        };
+        
+        // DOM元素引用
+        const initialVolumeSlider = document.getElementById('initialVolumeSlider');
+        const initialVolumeValue = document.getElementById('initialVolumeValue');
+        const initialConcentrationSlider = document.getElementById('initialConcentrationSlider');
+        const initialConcentrationValue = document.getElementById('initialConcentrationValue');
+        const inflowRateSlider = document.getElementById('inflowRateSlider');
+        const inflowRateValue = document.getElementById('inflowRateValue');
+        const inflowConcentrationSlider = document.getElementById('inflowConcentrationSlider');
+        const inflowConcentrationValue = document.getElementById('inflowConcentrationValue');
+        const outflowRateSlider = document.getElementById('outflowRateSlider');
+        const outflowRateValue = document.getElementById('outflowRateValue');
+        const equalRatesCheckbox = document.getElementById('equalRatesCheckbox');
+        const totalTimeSlider = document.getElementById('totalTimeSlider');
+        const totalTimeValue = document.getElementById('totalTimeValue');
+        const showAnalyticalCheckbox = document.getElementById('showAnalyticalCheckbox');
+        const startBtn = document.getElementById('startBtn');
+        const pauseBtn = document.getElementById('pauseBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const tankCanvas = document.getElementById('tankCanvas');
+        const plotCanvas = document.getElementById('plotCanvas');
+        const tankCtx = tankCanvas.getContext('2d');
+        const plotCtx = plotCanvas.getContext('2d');
+        const tankInfo = document.getElementById('tankInfo');
+        const progressFill = document.getElementById('progressFill');
+        const progressText = document.getElementById('progressText');
+        const currentTimeValue = document.getElementById('currentTimeValue');
+        const currentConcentrationValue = document.getElementById('currentConcentrationValue');
+        const currentVolumeValue = document.getElementById('currentVolumeValue');
+        const currentMassValue = document.getElementById('currentMassValue');
+        const diffEquation = document.getElementById('diffEquation');
+        const volumeEquation = document.getElementById('volumeEquation');
+        const mixingStatus = document.getElementById('mixingStatus');
+        const finalConcentration = document.getElementById('finalConcentration');
+        const finalVolume = document.getElementById('finalVolume');
+        const timeConstant = document.getElementById('timeConstant');
+        const timeStepValue = document.getElementById('timeStepValue');
+        const stepCountValue = document.getElementById('stepCountValue');
+        
+        // 颜色方案
+        const Colors = {
+            background: '#ffffff',
+            tank: '#ecf0f1',
+            fluidLow: '#d6eaf8',     // 低浓度颜色
+            fluidHigh: '#3498db',    // 高浓度颜色
+            inflowArrow: '#2ecc71',
+            outflowArrow: '#e74c3c',
+            concentrationCurve: '#3498db',
+            volumeCurve: '#2ecc71',
+            analyticalCurve: '#9b59b6',
+            grid: '#ecf0f1',
+            axis: '#2c3e50',
+            text: '#2c3e50',
+            currentTimeLine: '#e74c3c'
+        };
+        
+        // 初始化应用程序
+        function initApp() {
+            // 设置事件监听器
+            initialVolumeSlider.addEventListener('input', updateInitialVolume);
+            initialConcentrationSlider.addEventListener('input', updateInitialConcentration);
+            inflowRateSlider.addEventListener('input', updateInflowRate);
+            inflowConcentrationSlider.addEventListener('input', updateInflowConcentration);
+            outflowRateSlider.addEventListener('input', updateOutflowRate);
+            equalRatesCheckbox.addEventListener('change', updateEqualRates);
+            totalTimeSlider.addEventListener('input', updateTotalTime);
+            showAnalyticalCheckbox.addEventListener('change', updateShowAnalytical);
+            startBtn.addEventListener('click', startSimulation);
+            pauseBtn.addEventListener('click', pauseSimulation);
+            resetBtn.addEventListener('click', resetSimulation);
+            
+            // 初始计算
+            updateAllDisplays();
+            calculateSolution();
+            drawTank();
+            drawPlot();
+            
+            // 设置初始按钮状态
+            pauseBtn.disabled = true;
+        }
+        
+        // 更新初始体积
+        function updateInitialVolume() {
+            AppState.V0 = parseFloat(initialVolumeSlider.value);
+            initialVolumeValue.textContent = AppState.V0;
+            updateAllDisplays();
+            if (AppState.isRunning) pauseSimulation();
+            calculateSolution();
+        }
+        
+        // 更新初始浓度
+        function updateInitialConcentration() {
+            AppState.c0 = parseFloat(initialConcentrationSlider.value);
+            initialConcentrationValue.textContent = AppState.c0.toFixed(1);
+            updateAllDisplays();
+            if (AppState.isRunning) pauseSimulation();
+            calculateSolution();
+        }
+        
+        // 更新流入速率
+        function updateInflowRate() {
+            AppState.rin = parseFloat(inflowRateSlider.value);
+            inflowRateValue.textContent = AppState.rin.toFixed(1);
+            
+            // 如果勾选了"r_out = r_in"，则同时更新流出速率
+            if (equalRatesCheckbox.checked) {
+                AppState.rout = AppState.rin;
+                outflowRateSlider.value = AppState.rout;
+                outflowRateValue.textContent = AppState.rout.toFixed(1);
+            }
+            
+            updateAllDisplays();
+            if (AppState.isRunning) pauseSimulation();
+            calculateSolution();
+        }
+        
+        // 更新流入浓度
+        function updateInflowConcentration() {
+            AppState.cin = parseFloat(inflowConcentrationSlider.value);
+            inflowConcentrationValue.textContent = AppState.cin.toFixed(1);
+            updateAllDisplays();
+            if (AppState.isRunning) pauseSimulation();
+            calculateSolution();
+        }
+        
+        // 更新流出速率
+        function updateOutflowRate() {
+            AppState.rout = parseFloat(outflowRateSlider.value);
+            outflowRateValue.textContent = AppState.rout.toFixed(1);
+            updateAllDisplays();
+            if (AppState.isRunning) pauseSimulation();
+            calculateSolution();
+        }
+        
+        // 更新等速率复选框
+        function updateEqualRates() {
+            AppState.equalRates = equalRatesCheckbox.checked;
+            
+            if (AppState.equalRates) {
+                // 使流出速率等于流入速率
+                AppState.rout = AppState.rin;
+                outflowRateSlider.value = AppState.rout;
+                outflowRateValue.textContent = AppState.rout.toFixed(1);
+                outflowRateSlider.disabled = true;
+            } else {
+                outflowRateSlider.disabled = false;
+            }
+            
+            updateAllDisplays();
+            if (AppState.isRunning) pauseSimulation();
+            calculateSolution();
+        }
+        
+        // 更新总时间
+        function updateTotalTime() {
+            AppState.T = parseFloat(totalTimeSlider.value);
+            totalTimeValue.textContent = AppState.T.toFixed(1);
+            updateAllDisplays();
+            if (AppState.isRunning) pauseSimulation();
+            calculateSolution();
+        }
+        
+        // 更新显示解析解复选框
+        function updateShowAnalytical() {
+            AppState.showAnalytical = showAnalyticalCheckbox.checked;
+            drawPlot();
+        }
+        
+        // 更新所有显示
+        function updateAllDisplays() {
+            // 更新微分方程显示
+            diffEquation.textContent = `微分方程: d(Vc)/dt = r_in·c_in - r_out·c = ${AppState.rin.toFixed(1)}·${AppState.cin.toFixed(1)} - ${AppState.rout.toFixed(1)}·c`;
+            volumeEquation.textContent = `体积变化: dV/dt = r_in - r_out = ${AppState.rin.toFixed(1)} - ${AppState.rout.toFixed(1)} = ${(AppState.rin - AppState.rout).toFixed(1)}`;
+            
+            // 计算最终浓度和体积
+            if (AppState.equalRates) {
+                // 体积恒定
+                finalVolume.textContent = `${AppState.V0.toFixed(1)} L`;
+                finalConcentration.textContent = `${AppState.cin.toFixed(3)} g/L`;
+                timeConstant.textContent = `${(AppState.V0 / AppState.rin).toFixed(2)} min`;
+            } else {
+                // 体积变化
+                const V_final = AppState.V0 + (AppState.rin - AppState.rout) * AppState.T;
+                finalVolume.textContent = `${Math.max(0, V_final).toFixed(1)} L`;
+                finalConcentration.textContent = "变化中";
+                timeConstant.textContent = "N/A";
+            }
+            
+            // 更新状态
+            if (AppState.isRunning) {
+                mixingStatus.textContent = "模拟运行中";
+            } else if (AppState.currentTime > 0) {
+                mixingStatus.textContent = "模拟已暂停";
+            } else {
+                mixingStatus.textContent = "准备就绪";
+            }
+            
+            // 更新步数显示
+            stepCountValue.textContent = `${AppState.currentStep} / ${AppState.totalSteps}`;
+            
+            // 更新时间步长显示
+            timeStepValue.textContent = "0.01 min";
+        }
+        
+        // 计算微分方程的解（使用四阶龙格-库塔法）
+        function calculateSolution() {
+            // 重置数据
+            AppState.timeData = [];
+            AppState.concentrationData = [];
+            AppState.volumeData = [];
+            AppState.analyticalData = [];
+            
+            // 计算总步数
+            const dt = 0.01; // 时间步长 (min)
+            AppState.totalSteps = Math.floor(AppState.T / dt);
+            AppState.currentStep = 0;
+            AppState.currentTime = 0;
+            
+            // 初始化
+            let V = AppState.V0;
+            let c = AppState.c0;
+            let t = 0;
+            
+            // 存储初始值
+            storeDataPoint(t, V, c);
+            
+            // 使用四阶龙格-库塔法
+            for (let step = 0; step < AppState.totalSteps; step++) {
+                // RK4步骤
+                const k1V = dt * dVdt(V);
+                const k1c = dt * dcdt(t, V, c);
+                
+                const k2V = dt * dVdt(V + 0.5 * k1V);
+                const k2c = dt * dcdt(t + 0.5 * dt, V + 0.5 * k1V, c + 0.5 * k1c);
+                
+                const k3V = dt * dVdt(V + 0.5 * k2V);
+                const k3c = dt * dcdt(t + 0.5 * dt, V + 0.5 * k2V, c + 0.5 * k2c);
+                
+                const k4V = dt * dVdt(V + k3V);
+                const k4c = dt * dcdt(t + dt, V + k3V, c + k3c);
+                
+                // 更新状态
+                V = V + (k1V + 2*k2V + 2*k3V + k4V) / 6;
+                c = c + (k1c + 2*k2c + 2*k3c + k4c) / 6;
+                t = t + dt;
+                
+                // 确保体积不为负
+                V = Math.max(0, V);
+                
+                // 存储数据
+                storeDataPoint(t, V, c);
+            }
+            
+            // 如果体积恒定，计算解析解
+            if (AppState.equalRates) {
+                calculateAnalyticalSolution();
+            }
+            
+            // 更新显示
+            updateAllDisplays();
+            drawPlot();
+        }
+        
+        // 计算体积变化率
+        function dVdt(V) {
+            return AppState.rin - AppState.rout;
+        }
+        
+        // 计算浓度变化率
+        function dcdt(t, V, c) {
+            if (V <= 0) return 0;
+            return (AppState.rin * AppState.cin - AppState.rout * c) / V;
+        }
+        
+        // 存储数据点
+        function storeDataPoint(t, V, c) {
+            AppState.timeData.push(t);
+            AppState.volumeData.push(V);
+            AppState.concentrationData.push(c);
+        }
+        
+        // 计算解析解（当体积恒定时）
+        function calculateAnalyticalSolution() {
+            if (!AppState.equalRates) return;
+            
+            const V0 = AppState.V0;
+            const c0 = AppState.c0;
+            const rin = AppState.rin;
+            const cin = AppState.cin;
+            
+            for (let i = 0; i < AppState.timeData.length; i++) {
+                const t = AppState.timeData[i];
+                // 解析解: c(t) = c_in + (c_0 - c_in) * exp(-(r_in/V_0)*t)
+                const c_analytical = cin + (c0 - cin) * Math.exp(-(rin / V0) * t);
+                AppState.analyticalData.push(c_analytical);
+            }
+        }
+        
+        // 开始模拟
+        function startSimulation() {
+            if (AppState.currentStep >= AppState.totalSteps) {
+                resetSimulation();
+            }
+            
+            AppState.isRunning = true;
+            startBtn.disabled = true;
+            pauseBtn.disabled = false;
+            mixingStatus.textContent = "模拟运行中";
+            
+            // 开始动画循环
+            animate();
+        }
+        
+        // 暂停模拟
+        function pauseSimulation() {
+            AppState.isRunning = false;
+            startBtn.disabled = false;
+            pauseBtn.disabled = true;
+            mixingStatus.textContent = "模拟已暂停";
+            
+            if (AppState.animationId) {
+                cancelAnimationFrame(AppState.animationId);
+                AppState.animationId = null;
+            }
+        }
+        
+        // 重置模拟
+        function resetSimulation() {
+            pauseSimulation();
+            AppState.currentStep = 0;
+            AppState.currentTime = 0;
+            updateCurrentInfo();
+            updateProgressBar();
+            drawTank();
+            drawPlot();
+            updateAllDisplays();
+        }
+        
+        // 动画循环
+        function animate() {
+            if (!AppState.isRunning) return;
+            
+            // 更新当前步
+            if (AppState.currentStep < AppState.totalSteps) {
+                AppState.currentStep++;
+                AppState.currentTime = AppState.timeData[AppState.currentStep];
+            } else {
+                pauseSimulation();
+                return;
+            }
+            
+            // 更新显示
+            updateCurrentInfo();
+            updateProgressBar();
+            drawTank();
+            drawPlot();
+            
+            // 继续动画循环
+            if (AppState.isRunning) {
+                AppState.animationId = requestAnimationFrame(animate);
+            }
+        }
+        
+        // 更新当前信息
+        function updateCurrentInfo() {
+            const concentration = AppState.concentrationData[AppState.currentStep] || 0;
+            const volume = AppState.volumeData[AppState.currentStep] || 0;
+            const mass = concentration * volume;
+            
+            currentTimeValue.textContent = AppState.currentTime.toFixed(2) + " min";
+            currentConcentrationValue.textContent = concentration.toFixed(3) + " g/L";
+            currentVolumeValue.textContent = volume.toFixed(1) + " L";
+            currentMassValue.textContent = mass.toFixed(2) + " g";
+            
+            tankInfo.textContent = `浓度: ${concentration.toFixed(3)}g/L, 体积: ${volume.toFixed(1)}L`;
+        }
+        
+        // 更新进度条
+        function updateProgressBar() {
+            const progress = (AppState.currentTime / AppState.T) * 100;
+            progressFill.style.width = progress + "%";
+            progressText.textContent = `时间: ${AppState.currentTime.toFixed(2)}min / ${AppState.T.toFixed(2)}min`;
+        }
+        
+        // 绘制容器动画
+        function drawTank() {
+            // 清除画布
+            tankCtx.clearRect(0, 0, tankCanvas.width, tankCanvas.height);
+            
+            // 获取当前值
+            const concentration = AppState.concentrationData[AppState.currentStep] || 0;
+            const volume = AppState.volumeData[AppState.currentStep] || 0;
+            
+            // 容器参数
+            const tankX = 150;
+            const tankY = 50;
+            const maxTankHeight = 200;
+            const tankWidth = 200;
+            
+            // 计算最大体积（用于缩放）
+            const maxVolume = Math.max(AppState.V0, ...AppState.volumeData);
+            
+            // 计算当前容器高度
+            const tankHeight = (volume / maxVolume) * maxTankHeight;
+            
+            // 绘制容器边框
+            tankCtx.strokeStyle = Colors.axis;
+            tankCtx.lineWidth = 2;
+            tankCtx.strokeRect(tankX, tankY, tankWidth, maxTankHeight);
+            
+            // 计算流体颜色（根据浓度）
+            const maxConcentration = Math.max(AppState.cin, ...AppState.concentrationData);
+            const colorIntensity = Math.min(1, concentration / maxConcentration);
+            const r = Math.floor(214 - 86 * colorIntensity);  // 从#d6eaf8到#3498db
+            const g = Math.floor(234 - 99 * colorIntensity);
+            const b = Math.floor(248 - 47 * colorIntensity);
+            
+            // 绘制流体
+            tankCtx.fillStyle = `rgb(${r}, ${g}, ${b})`;
+            tankCtx.fillRect(tankX, tankY + maxTankHeight - tankHeight, tankWidth, tankHeight);
+            
+            // 绘制流入箭头
+            drawInflowArrow(tankCtx, tankX - 80, tankY + 50, 60, 30);
+            
+            // 绘制流出箭头
+            drawOutflowArrow(tankCtx, tankX + tankWidth + 20, tankY + maxTankHeight - 50, 60, 30);
+            
+            // 绘制容器标签
+            tankCtx.fillStyle = Colors.text;
+            tankCtx.font = '16px Arial';
+            tankCtx.textAlign = 'center';
+            tankCtx.fillText("混合容器", tankX + tankWidth/2, tankY - 10);
+            
+            // 绘制流入信息
+            tankCtx.font = '12px Arial';
+            tankCtx.fillText(`r_in = ${AppState.rin.toFixed(1)} L/min`, tankX - 50, tankY + 40);
+            tankCtx.fillText(`c_in = ${AppState.cin.toFixed(1)} g/L`, tankX - 50, tankY + 60);
+            
+            // 绘制流出信息
+            tankCtx.fillText(`r_out = ${AppState.rout.toFixed(1)} L/min`, tankX + tankWidth + 50, tankY + maxTankHeight - 60);
+            
+            // 绘制体积刻度
+            drawVolumeScale(tankCtx, tankX + tankWidth, tankY, maxTankHeight, maxVolume);
+            
+            // 绘制当前浓度和体积
+            tankCtx.fillStyle = Colors.text;
+            tankCtx.font = '14px Arial';
+            tankCtx.textAlign = 'center';
+            tankCtx.fillText(`浓度: ${concentration.toFixed(3)} g/L`, tankX + tankWidth/2, tankY + maxTankHeight + 20);
+            tankCtx.fillText(`体积: ${volume.toFixed(1)} L`, tankX + tankWidth/2, tankY + maxTankHeight + 40);
+        }
+        
+        // 绘制流入箭头
+        function drawInflowArrow(ctx, x, y, width, height) {
+            ctx.strokeStyle = Colors.inflowArrow;
+            ctx.lineWidth = 2;
+            ctx.fillStyle = Colors.inflowArrow;
+            
+            // 绘制箭头线
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+            ctx.lineTo(x + width, y);
+            ctx.stroke();
+            
+            // 绘制箭头头
+            ctx.beginPath();
+            ctx.moveTo(x + width, y);
+            ctx.lineTo(x + width - 10, y - 5);
+            ctx.lineTo(x + width - 10, y + 5);
+            ctx.closePath();
+            ctx.fill();
+            
+            // 绘制流动效果
+            ctx.strokeStyle = Colors.inflowArrow;
+            ctx.setLineDash([5, 5]);
+            ctx.beginPath();
+            for (let i = 0; i < 3; i++) {
+                const offset = (Date.now() / 50 + i * 20) % 40;
+                ctx.moveTo(x + offset, y - 8);
+                ctx.lineTo(x + offset, y + 8);
+            }
+            ctx.stroke();
+            ctx.setLineDash([]);
+        }
+        
+        // 绘制流出箭头
+        function drawOutflowArrow(ctx, x, y, width, height) {
+            ctx.strokeStyle = Colors.outflowArrow;
+            ctx.lineWidth = 2;
+            ctx.fillStyle = Colors.outflowArrow;
+            
+            // 绘制箭头线
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+            ctx.lineTo(x + width, y);
+            ctx.stroke();
+            
+            // 绘制箭头头
+            ctx.beginPath();
+            ctx.moveTo(x + width, y);
+            ctx.lineTo(x + width - 10, y - 5);
+            ctx.lineTo(x + width - 10, y + 5);
+            ctx.closePath();
+            ctx.fill();
+            
+            // 绘制流动效果
+            ctx.strokeStyle = Colors.outflowArrow;
+            ctx.setLineDash([5, 5]);
+            ctx.beginPath();
+            for (let i = 0; i < 3; i++) {
+                const offset = (Date.now() / 50 + i * 20) % 40;
+                ctx.moveTo(x + offset, y - 8);
+                ctx.lineTo(x + offset, y + 8);
+            }
+            ctx.stroke();
+            ctx.setLineDash([]);
+        }
+        
+        // 绘制体积刻度
+        function drawVolumeScale(ctx, x, y, height, maxVolume) {
+            ctx.strokeStyle = Colors.text;
+            ctx.lineWidth = 1;
+            ctx.font = '10px Arial';
+            ctx.textAlign = 'left';
+            
+            // 绘制刻度线
+            for (let i = 0; i <= 5; i++) {
+                const volume = (i / 5) * maxVolume;
+                const scaleY = y + height - (i / 5) * height;
+                
+                ctx.beginPath();
+                ctx.moveTo(x, scaleY);
+                ctx.lineTo(x + 10, scaleY);
+                ctx.stroke();
+                
+                ctx.fillText(`${volume.toFixed(0)}L`, x + 15, scaleY + 3);
+            }
+        }
+        
+        // 绘制曲线
+        function drawPlot() {
+            // 清除画布
+            plotCtx.clearRect(0, 0, plotCanvas.width, plotCanvas.height);
+            
+            // 绘制网格
+            drawPlotGrid();
+            
+            // 绘制坐标轴
+            drawPlotAxes();
+            
+            // 绘制浓度曲线
+            drawConcentrationCurve();
+            
+            // 绘制体积曲线
+            drawVolumeCurve();
+            
+            // 绘制解析解曲线
+            if (AppState.showAnalytical && AppState.equalRates) {
+                drawAnalyticalCurve();
+            }
+            
+            // 绘制当前时间线
+            drawCurrentTimeLine();
+            
+            // 绘制图例
+            drawPlotLegend();
+        }
+        
+        // 绘制网格
+        function drawPlotGrid() {
+            plotCtx.strokeStyle = Colors.grid;
+            plotCtx.lineWidth = 0.5;
+            
+            // 水平网格线
+            const yStep = 1; // 每1单位一条线
+            const yMin = 0;
+            const yMax = 5;
+            
+            for (let y = Math.ceil(yMin); y <= Math.floor(yMax); y += yStep) {
+                if (y === 0) continue;
+                const canvasY = mathToCanvasY(y, yMin, yMax, plotCanvas.height);
+                plotCtx.beginPath();
+                plotCtx.moveTo(0, canvasY);
+                plotCtx.lineTo(plotCanvas.width, canvasY);
+                plotCtx.stroke();
+            }
+            
+            // 垂直网格线
+            const xStep = 5; // 每5分钟一条线
+            for (let x = 0; x <= AppState.T; x += xStep) {
+                const canvasX = mathToCanvasX(x, 0, AppState.T, plotCanvas.width);
+                plotCtx.beginPath();
+                plotCtx.moveTo(canvasX, 0);
+                plotCtx.lineTo(canvasX, plotCanvas.height);
+                plotCtx.stroke();
+            }
+        }
+        
+        // 绘制坐标轴
+        function drawPlotAxes() {
+            plotCtx.strokeStyle = Colors.axis;
+            plotCtx.lineWidth = 1;
+            
+            // x轴
+            const canvasYZero = mathToCanvasY(0, 0, 5, plotCanvas.height);
+            plotCtx.beginPath();
+            plotCtx.moveTo(0, canvasYZero);
+            plotCtx.lineTo(plotCanvas.width, canvasYZero);
+            plotCtx.stroke();
+            
+            // y轴
+            const canvasXZero = mathToCanvasX(0, 0, AppState.T, plotCanvas.width);
+            plotCtx.beginPath();
+            plotCtx.moveTo(canvasXZero, 0);
+            plotCtx.lineTo(canvasXZero, plotCanvas.height);
+            plotCtx.stroke();
+            
+            // 坐标轴标签
+            plotCtx.fillStyle = Colors.text;
+            plotCtx.font = '12px Arial';
+            plotCtx.textAlign = 'center';
+            
+            // x轴刻度
+            for (let x = 0; x <= AppState.T; x += 5) {
+                const canvasX = mathToCanvasX(x, 0, AppState.T, plotCanvas.width);
+                plotCtx.beginPath();
+                plotCtx.moveTo(canvasX, canvasYZero - 5);
+                plotCtx.lineTo(canvasX, canvasYZero + 5);
+                plotCtx.stroke();
+                
+                plotCtx.fillText(x.toString(), canvasX, canvasYZero + 15);
+            }
+            
+            // y轴刻度
+            for (let y = 0; y <= 5; y += 1) {
+                if (y === 0) continue;
+                const canvasY = mathToCanvasY(y, 0, 5, plotCanvas.height);
+                plotCtx.beginPath();
+                plotCtx.moveTo(canvasXZero - 5, canvasY);
+                plotCtx.lineTo(canvasXZero + 5, canvasY);
+                plotCtx.stroke();
+                
+                plotCtx.save();
+                plotCtx.translate(canvasXZero - 15, canvasY);
+                plotCtx.rotate(-Math.PI/2);
+                plotCtx.textAlign = 'center';
+                plotCtx.fillText(y.toString(), 0, 0);
+                plotCtx.restore();
+            }
+            
+            // 坐标轴标签
+            plotCtx.textAlign = 'right';
+            plotCtx.fillText("时间 t (min)", plotCanvas.width - 10, canvasYZero - 10);
+            
+            plotCtx.save();
+            plotCtx.translate(20, plotCanvas.height / 2);
+            plotCtx.rotate(-Math.PI/2);
+            plotCtx.textAlign = 'center';
+            plotCtx.fillText("浓度 c (g/L) / 体积 V (L)", 0, 0);
+            plotCtx.restore();
+        }
+        
+        // 绘制浓度曲线
+        function drawConcentrationCurve() {
+            if (AppState.timeData.length === 0) return;
+            
+            plotCtx.strokeStyle = Colors.concentrationCurve;
+            plotCtx.lineWidth = 2;
+            plotCtx.beginPath();
+            
+            // 找到y轴范围
+            const yMin = 0;
+            const yMax = 5;
+            
+            // 绘制曲线
+            for (let i = 0; i < Math.min(AppState.currentStep + 1, AppState.timeData.length); i++) {
+                const canvasX = mathToCanvasX(AppState.timeData[i], 0, AppState.T, plotCanvas.width);
+                const canvasY = mathToCanvasY(AppState.concentrationData[i], yMin, yMax, plotCanvas.height);
+                
+                if (i === 0) {
+                    plotCtx.moveTo(canvasX, canvasY);
+                } else {
+                    plotCtx.lineTo(canvasX, canvasY);
+                }
+            }
+            
+            plotCtx.stroke();
+        }
+        
+        // 绘制体积曲线
+        function drawVolumeCurve() {
+            if (AppState.timeData.length === 0) return;
+            
+            plotCtx.strokeStyle = Colors.volumeCurve;
+            plotCtx.lineWidth = 1;
+            plotCtx.setLineDash([5, 5]);
+            plotCtx.beginPath();
+            
+            // 找到y轴范围
+            const yMin = 0;
+            const yMax = 5;
+            
+            // 绘制曲线
+            for (let i = 0; i < Math.min(AppState.currentStep + 1, AppState.timeData.length); i++) {
+                const canvasX = mathToCanvasX(AppState.timeData[i], 0, AppState.T, plotCanvas.width);
+                const canvasY = mathToCanvasY(AppState.volumeData[i] / 20, yMin, yMax, plotCanvas.height);
+                
+                if (i === 0) {
+                    plotCtx.moveTo(canvasX, canvasY);
+                } else {
+                    plotCtx.lineTo(canvasX, canvasY);
+                }
+            }
+            
+            plotCtx.stroke();
+            plotCtx.setLineDash([]);
+        }
+        
+        // 绘制解析解曲线
+        function drawAnalyticalCurve() {
+            if (AppState.timeData.length === 0 || AppState.analyticalData.length === 0) return;
+            
+            plotCtx.strokeStyle = Colors.analyticalCurve;
+            plotCtx.lineWidth = 1;
+            plotCtx.setLineDash([2, 2]);
+            plotCtx.beginPath();
+            
+            // 找到y轴范围
+            const yMin = 0;
+            const yMax = 5;
+            
+            // 绘制曲线
+            for (let i = 0; i < Math.min(AppState.currentStep + 1, AppState.timeData.length); i++) {
+                const canvasX = mathToCanvasX(AppState.timeData[i], 0, AppState.T, plotCanvas.width);
+                const canvasY = mathToCanvasY(AppState.analyticalData[i], yMin, yMax, plotCanvas.height);
+                
+                if (i === 0) {
+                    plotCtx.moveTo(canvasX, canvasY);
+                } else {
+                    plotCtx.lineTo(canvasX, canvasY);
+                }
+            }
+            
+            plotCtx.stroke();
+            plotCtx.setLineDash([]);
+        }
+        
+        // 绘制当前时间线
+        function drawCurrentTimeLine() {
+            if (AppState.timeData.length === 0) return;
+            
+            const canvasX = mathToCanvasX(AppState.currentTime, 0, AppState.T, plotCanvas.width);
+            
+            plotCtx.strokeStyle = Colors.currentTimeLine;
+            plotCtx.lineWidth = 2;
+            plotCtx.setLineDash([5, 5]);
+            plotCtx.beginPath();
+            plotCtx.moveTo(canvasX, 0);
+            plotCtx.lineTo(canvasX, plotCanvas.height);
+            plotCtx.stroke();
+            plotCtx.setLineDash([]);
+            
+            // 绘制当前时间点
+            const yMin = 0;
+            const yMax = 5;
+            const concentration = AppState.concentrationData[AppState.currentStep] || 0;
+            const volume = AppState.volumeData[AppState.currentStep] || 0;
+            
+            const canvasYConcentration = mathToCanvasY(concentration, yMin, yMax, plotCanvas.height);
+            const canvasYVolume = mathToCanvasY(volume / 20, yMin, yMax, plotCanvas.height);
+            
+            // 绘制浓度点
+            plotCtx.fillStyle = Colors.concentrationCurve;
+            plotCtx.beginPath();
+            plotCtx.arc(canvasX, canvasYConcentration, 4, 0, 2 * Math.PI);
+            plotCtx.fill();
+            
+            // 绘制体积点
+            plotCtx.fillStyle = Colors.volumeCurve;
+            plotCtx.beginPath();
+            plotCtx.arc(canvasX, canvasYVolume, 4, 0, 2 * Math.PI);
+            plotCtx.fill();
+        }
+        
+        // 绘制图例
+        function drawPlotLegend() {
+            plotCtx.fillStyle = Colors.text;
+            plotCtx.font = '12px Arial';
+            plotCtx.textAlign = 'left';
+            
+            // 浓度图例
+            plotCtx.fillStyle = Colors.concentrationCurve;
+            plotCtx.fillText("浓度 c(t)", 20, 20);
+            
+            // 体积图例
+            plotCtx.fillStyle = Colors.volumeCurve;
+            plotCtx.fillText("体积 V(t)/20", 20, 40);
+            
+            // 解析解图例
+            if (AppState.showAnalytical && AppState.equalRates) {
+                plotCtx.fillStyle = Colors.analyticalCurve;
+                plotCtx.fillText("解析解", 20, 60);
+            }
+            
+            // 当前时间
+            plotCtx.fillStyle = Colors.currentTimeLine;
+            plotCtx.fillText(`当前时间: ${AppState.currentTime.toFixed(2)}min`, 20, plotCanvas.height - 20);
+        }
+        
+        // 数学坐标到画布坐标的转换
+        function mathToCanvasX(x, xMin, xMax, canvasWidth) {
+            return ((x - xMin) / (xMax - xMin)) * canvasWidth;
+        }
+        
+        function mathToCanvasY(y, yMin, yMax, canvasHeight) {
+            return canvasHeight - ((y - yMin) / (yMax - yMin)) * canvasHeight;
+        }
+        
+        // 页面加载完成后初始化应用程序
+        window.addEventListener('DOMContentLoaded', initApp);
+    </script>
+</body>
+</html>
