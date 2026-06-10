@@ -73,6 +73,31 @@
             border-left: 4px solid #3498db;
             padding-left: 10px;
         }
+
+        .left-panel .control-section:nth-of-type(3),
+        .left-panel .control-section:nth-of-type(4) {
+            padding: 16px 20px;
+            margin-bottom: 14px;
+        }
+
+        .left-panel .control-section:nth-of-type(3) h2,
+        .left-panel .control-section:nth-of-type(4) h2 {
+            margin-bottom: 10px;
+        }
+
+        .left-panel .control-section:nth-of-type(3) input[type="number"] {
+            margin-bottom: 10px;
+        }
+
+        .left-panel .control-section:nth-of-type(3) .range-inputs,
+        .left-panel .control-section:nth-of-type(4) .checkbox-group,
+        .left-panel .control-section:nth-of-type(4) .slider-container {
+            margin-bottom: 10px;
+        }
+
+        .left-panel .control-section:nth-of-type(4) .checkbox-item {
+            margin-bottom: 6px;
+        }
         
         label {
             display: block;
@@ -344,17 +369,16 @@
                 <div class="control-section">
                     <h2>1. 曲线族方程设置</h2>
                     <label for="familyInput">曲线族方程 Φ(x, y, C) = 0：</label>
-                    <input type="text" id="familyInput" value="y - C*x - 1/C" placeholder="例如：y - C*x - 1/C">
+                    <input type="text" id="familyInput" value="y=(x+C)^3" placeholder="例如：y=C*x+1/C">
                     
                     <label for="exampleSelect">预设示例：</label>
                     <select id="exampleSelect" class="example-select">
-                        <option value="example1">示例1: y - C*x - 1/C (克莱罗方程)</option>
-                        <option value="example2">示例2: y - C*x - C^2 (克莱罗方程)</option>
-                        <option value="example3">示例3: (x-C)^2 + y^2 - 4*C^2</option>
-                        <option value="example4">示例4: y - (x-C)^2 (抛物线族)</option>
-                        <option value="example5">示例5: x*C^2 + y*C + 1 (二次曲线族)</option>
-                        <option value="example6">示例6: y - sin(C*x) (正弦曲线族)</option>
-                        <option value="example7">示例7: y^2 - (x-C)^2 - 1 (双曲线族)</option>
+                        <option value="example1">示例1: y=(x+C)^3</option>
+                        <option value="example2">示例2: y=sin(x+C)</option>
+                        <option value="example3">示例3: y=Cx+C^2</option>
+                        <option value="example4">示例4: y=Cx+1/C</option>
+                        <option value="example5">示例5: y=(x-C)^2</option>
+                        <option value="example6">示例6: y=sin(Cx)</option>
                     </select>
                     
                     <label>参数C范围 [C_min, C_max]：</label>
@@ -366,9 +390,9 @@
                     <div class="slider-container">
                         <div class="slider-label">
                             <span>曲线数量</span>
-                            <span id="curveCountValue" class="slider-value">20</span>
+                            <span id="curveCountValue" class="slider-value">15</span>
                         </div>
-                        <input type="range" id="curveCountSlider" min="5" max="50" step="1" value="20">
+                        <input type="range" id="curveCountSlider" min="5" max="50" step="1" value="15">
                     </div>
                 </div>
                 
@@ -385,6 +409,10 @@
                     <div class="button-group">
                         <button id="calcEnvelopeBtn">计算包络</button>
                         <button id="clearEnvelopeBtn">清除包络</button>
+                    </div>
+                    <div class="button-group">
+                        <button id="animateBtn">动画演示</button>
+                        <button id="resetViewBtn">重置视图</button>
                     </div>
                 </div>
                 
@@ -432,10 +460,6 @@
                         <input type="range" id="opacitySlider" min="0.1" max="1" step="0.1" value="0.7">
                     </div>
                     
-                    <div class="button-group">
-                        <button id="animateBtn">动画演示</button>
-                        <button id="resetViewBtn">重置视图</button>
-                    </div>
                 </div>
             </div>
             
@@ -448,11 +472,11 @@
                     <div class="info-grid">
                         <div class="info-item">
                             <h3>当前曲线族</h3>
-                            <p id="currentFamily">Φ(x, y, C) = y - Cx - 1/C</p>
+                            <p id="currentFamily">Φ(x, y, C) = y=(x+C)^3</p>
                         </div>
                         <div class="info-item">
                             <h3>包络线方程</h3>
-                            <p id="currentEnvelope">y² = 4x</p>
+                            <p id="currentEnvelope">y = 0</p>
                         </div>
                         <div class="info-item">
                             <h3>鼠标位置 (x, y)</h3>
@@ -518,10 +542,11 @@
     </div>
 
     <script>
-	// 检查用户是否已登录
+		// 检查用户是否已登录
 if (sessionStorage.getItem("allow") !== "ok") {
     window.location.href = "index.html";
 }
+    
         // 主应用程序状态和配置
         const AppState = {
             // 曲线族和包络方程
@@ -533,7 +558,7 @@ if (sessionStorage.getItem("allow") !== "ok") {
             // 参数范围
             cMin: -3,
             cMax: 3,
-            curveCount: 20,
+            curveCount: 15,
             
             // 绘图区域
             xMin: -5,
@@ -580,37 +605,7 @@ if (sessionStorage.getItem("allow") !== "ok") {
             // 预设示例数据
             examples: {
                 example1: {
-                    family: "y - C*x - 1/C",
-                    envelope: "y^2 = 4*x",
-                    cMin: -3,
-                    cMax: 3,
-                    xMin: -5,
-                    xMax: 5,
-                    yMin: -5,
-                    yMax: 5
-                },
-                example2: {
-                    family: "y - C*x - C^2",
-                    envelope: "x^2 + 4*y = 0",
-                    cMin: -3,
-                    cMax: 3,
-                    xMin: -5,
-                    xMax: 5,
-                    yMin: -5,
-                    yMax: 5
-                },
-                example3: {
-                    family: "(x-C)^2 + y^2 - 4*C^2",
-                    envelope: "y^2 = 3*x^2",
-                    cMin: -3,
-                    cMax: 3,
-                    xMin: -5,
-                    xMax: 5,
-                    yMin: -5,
-                    yMax: 5
-                },
-                example4: {
-                    family: "y - (x-C)^2",
+                    family: "y=(x+C)^3",
                     envelope: "y = 0",
                     cMin: -3,
                     cMax: 3,
@@ -619,9 +614,39 @@ if (sessionStorage.getItem("allow") !== "ok") {
                     yMin: -5,
                     yMax: 5
                 },
-                example5: {
-                    family: "x*C^2 + y*C + 1",
+                example2: {
+                    family: "y=sin(x+C)",
+                    envelope: "y = 1;y = -1",
+                    cMin: -3,
+                    cMax: 3,
+                    xMin: -5,
+                    xMax: 5,
+                    yMin: -2,
+                    yMax: 2
+                },
+                example3: {
+                    family: "y=Cx+C^2",
+                    envelope: "x^2 + 4*y = 0",
+                    cMin: -3,
+                    cMax: 3,
+                    xMin: -5,
+                    xMax: 5,
+                    yMin: -5,
+                    yMax: 5
+                },
+                example4: {
+                    family: "y=Cx+1/C",
                     envelope: "y^2 = 4*x",
+                    cMin: -3,
+                    cMax: 3,
+                    xMin: -1,
+                    xMax: 5,
+                    yMin: -5,
+                    yMax: 5
+                },
+                example5: {
+                    family: "y=(x-C)^2",
+                    envelope: "y = 0",
                     cMin: -3,
                     cMax: 3,
                     xMin: -5,
@@ -630,7 +655,7 @@ if (sessionStorage.getItem("allow") !== "ok") {
                     yMax: 5
                 },
                 example6: {
-                    family: "y - sin(C*x)",
+                    family: "y=sin(Cx)",
                     envelope: "y = 1;y = -1",
                     cMin: 0.5,
                     cMax: 3,
@@ -638,16 +663,6 @@ if (sessionStorage.getItem("allow") !== "ok") {
                     xMax: 5,
                     yMin: -2,
                     yMax: 2
-                },
-                example7: {
-                    family: "y^2 - (x-C)^2 - 1",
-                    envelope: "y = 1;y = -1",
-                    cMin: -3,
-                    cMax: 3,
-                    xMin: -5,
-                    xMax: 5,
-                    yMin: -5,
-                    yMax: 5
                 }
             }
         };
@@ -695,10 +710,27 @@ if (sessionStorage.getItem("allow") !== "ok") {
             point: '#9b59b6'
         };
 
+        function normalizeFamilyExpression(expr) {
+            expr = expr.replace(/\bC(?=x\b)/g, 'C*');
+
+            const equalIndex = expr.indexOf('=');
+            if (equalIndex === -1) {
+                return expr;
+            }
+
+            const left = expr.slice(0, equalIndex).trim();
+            const right = expr.slice(equalIndex + 1).trim();
+            if (!left || !right) {
+                return expr;
+            }
+
+            return `(${left}) - (${right})`;
+        }
+
         // 核心函数：安全地解析和计算数学表达式
         function createFunctionFromExpression(expr, vars) {
             try {
-                const compiled = math.compile(expr);
+                const compiled = math.compile(normalizeFamilyExpression(expr));
                 return function(...args) {
                     try {
                         const scope = {};
@@ -901,9 +933,6 @@ if (sessionStorage.getItem("allow") !== "ok") {
             for (let i = 0; i < AppState.curveCount; i++) {
                 const C = AppState.cMin + i * cStep;
                 
-                // 跳过C=0的情况，避免除以零
-                if (Math.abs(C) < 1e-10) continue;
-                
                 const points = [];
                 const xStep = (AppState.xMax - AppState.xMin) / 200;
                 
@@ -950,7 +979,7 @@ if (sessionStorage.getItem("allow") !== "ok") {
                 ctx.beginPath();
                 
                 // 对于显式方程 y = f(x)
-                if (typeof envelopeFunc === 'function' && envelopeFunc.length === 1) {
+                if (typeof envelopeFunc === 'function') {
                     const xStep = (AppState.xMax - AppState.xMin) / 400;
                     let firstPoint = true;
                     
@@ -1136,38 +1165,38 @@ if (sessionStorage.getItem("allow") !== "ok") {
                 const equations = expr.split(';').map(eq => eq.trim()).filter(eq => eq.length > 0);
                 
                 for (const equation of equations) {
-                    // 尝试解析为显式方程 y = f(x)
-                    if (equation.includes('y=') || equation.includes('y =')) {
-                        const yExpr = equation.split('=')[1].trim();
-                        const func = createFunctionFromExpression(yExpr, ['x']);
-                        if (func) {
-                            AppState.envelopeFuncs.push(func);
-                            AppState.envelopeEquations.push(equation);
-                        }
-                    } 
+                    const compactEquation = equation.replace(/\s+/g, '');
+
                     // 尝试解析为隐式方程 F(x, y) = 0
-                    else if (equation.includes('y^2') || equation.includes('x^2')) {
+                    if (equation.includes('y^2') || equation.includes('x^2')) {
                         // 简化处理：对于常见形式，直接硬编码
-                        if (equation === 'y^2 = 4*x' || equation === 'y^2=4*x') {
+                        if (compactEquation === 'y^2=4*x' || compactEquation === 'y^2=4x') {
                             AppState.envelopeFuncs.push((x) => {
                                 if (x < 0) return NaN;
                                 return 2 * Math.sqrt(x);
                             });
+                            AppState.envelopeFuncs.push((x) => {
+                                if (x < 0) return NaN;
+                                return -2 * Math.sqrt(x);
+                            });
                             AppState.envelopeEquations.push(equation);
-                        } else if (equation === 'x^2 + 4*y = 0' || equation === 'x^2+4*y=0') {
+                        } else if (compactEquation === 'x^2+4*y=0' || compactEquation === 'x^2+4y=0') {
                             AppState.envelopeFuncs.push((x) => -x*x/4);
                             AppState.envelopeEquations.push(equation);
-                        } else if (equation === 'y^2 = 3*x^2' || equation === 'y^2=3*x^2') {
+                        } else if (compactEquation === 'y^2=3*x^2' || compactEquation === 'y^2=3x^2') {
                             AppState.envelopeFuncs.push((x) => Math.sqrt(3) * Math.abs(x));
+                            AppState.envelopeFuncs.push((x) => -Math.sqrt(3) * Math.abs(x));
                             AppState.envelopeEquations.push(equation);
-                        } else if (equation === 'y = 0' || equation === 'y=0') {
-                            AppState.envelopeFuncs.push(() => 0);
-                            AppState.envelopeEquations.push(equation);
-                        } else if (equation === 'y = 1' || equation === 'y=1') {
-                            AppState.envelopeFuncs.push(() => 1);
-                            AppState.envelopeEquations.push(equation);
-                        } else if (equation === 'y = -1' || equation === 'y=-1') {
-                            AppState.envelopeFuncs.push(() => -1);
+                        } else {
+                            console.warn("无法解析隐式包络方程:", equation);
+                        }
+                    }
+                    // 尝试解析为显式方程 y = f(x)
+                    else if (/^\s*y\s*=/.test(equation)) {
+                        const yExpr = equation.split('=')[1].trim();
+                        const func = createFunctionFromExpression(yExpr, ['x']);
+                        if (func) {
+                            AppState.envelopeFuncs.push(func);
                             AppState.envelopeEquations.push(equation);
                         }
                     } else {
@@ -1232,7 +1261,7 @@ if (sessionStorage.getItem("allow") !== "ok") {
             for (const envelopeFunc of AppState.envelopeFuncs) {
                 try {
                     // 对于显式包络 y = f(x)
-                    if (typeof envelopeFunc === 'function' && envelopeFunc.length === 1) {
+                    if (typeof envelopeFunc === 'function') {
                         const envelopeY = envelopeFunc(x);
                         if (!isNaN(envelopeY) && Math.abs(envelopeY - y) < 0.05) {
                             return true;
