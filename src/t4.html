@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>奇解与包络几何探索器</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/12.4.0/math.js"></script>
     <style>
         * {
             margin: 0;
@@ -17,11 +16,12 @@
             background-color: #f5f7fa;
             color: #333;
             line-height: 1.6;
-            padding: 20px;
+            padding: 12px;
         }
         
         .container {
-            max-width: 1600px;
+            width: 100%;
+            min-width: 1000px;
             margin: 0 auto;
         }
         
@@ -45,25 +45,25 @@
         .main-content {
             display: flex;
             flex-wrap: wrap;
-            gap: 20px;
+            gap: 16px;
         }
         
         .left-panel {
-            flex: 1;
-            min-width: 350px;
+            flex: 0 0 300px;
+            min-width: 0;
         }
         
         .right-panel {
-            flex: 2;
-            min-width: 800px;
+            flex: 1 1 0;
+            min-width: 0;
         }
         
         .control-section {
             background: white;
-            padding: 20px;
+            padding: 16px;
             border-radius: 10px;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-            margin-bottom: 20px;
+            margin-bottom: 16px;
         }
         
         .control-section h2 {
@@ -76,7 +76,7 @@
 
         .left-panel .control-section:nth-of-type(3),
         .left-panel .control-section:nth-of-type(4) {
-            padding: 16px 20px;
+            padding: 14px 16px;
             margin-bottom: 14px;
         }
 
@@ -209,40 +209,94 @@
             border-radius: 6px;
             font-size: 1em;
         }
+
+        .plot-row {
+            display: flex;
+            align-items: stretch;
+            gap: 14px;
+            margin-bottom: 14px;
+            justify-content: center;
+        }
         
         .canvas-container {
             background: white;
             border-radius: 10px;
-            padding: 20px;
+            padding: 14px;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-            margin-bottom: 20px;
+            max-width: 808px;
+            margin: 0;
+            flex: 1 1 auto;
+            min-width: 460px;
+        }
+
+        .view-control-panel {
+            width: 210px;
+            flex: 0 0 210px;
+            margin-bottom: 0;
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .view-control-panel h2 {
+            margin-bottom: 10px;
+        }
+
+        .view-control-panel .checkbox-group,
+        .view-control-panel .slider-container {
+            margin-bottom: 10px;
+        }
+
+        .view-control-panel .checkbox-item {
+            margin-bottom: 6px;
+        }
+
+        .view-control-panel .view-actions {
+            flex-direction: column;
+            gap: 8px;
+            margin-top: auto;
+        }
+
+        .view-control-panel .view-actions button {
+            width: 100%;
+            padding: 10px 12px;
         }
         
         #mainCanvas {
             display: block;
+            width: 100%;
+            max-width: 780px;
+            height: auto;
             background-color: #fff;
             border: 1px solid #ccc;
             border-radius: 8px;
             cursor: crosshair;
         }
+
+        .status-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
         
         .info-panel {
             background: white;
             border-radius: 10px;
-            padding: 20px;
+            padding: 14px;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
         }
         
         .info-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-            margin-bottom: 20px;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 10px;
+            margin-bottom: 12px;
         }
         
         .info-item {
             background: #f8f9fa;
-            padding: 15px;
+            padding: 10px 12px;
             border-radius: 6px;
             border-left: 4px solid #3498db;
         }
@@ -254,22 +308,22 @@
         }
         
         .info-item p {
-            font-size: 1.1em;
+            font-size: 1em;
             font-weight: bold;
             color: #2c3e50;
         }
         
         .interactive-info {
-            padding: 15px;
+            padding: 10px 12px;
             background-color: #fff3cd;
             border-radius: 6px;
             border: 1px solid #ffeaa7;
-            margin-bottom: 15px;
+            margin-bottom: 0;
         }
         
         .instructions {
-            margin-top: 20px;
-            padding: 15px;
+            margin-top: 16px;
+            padding: 14px 16px;
             background-color: #e8f4fc;
             border-radius: 8px;
             border-left: 4px solid #3498db;
@@ -281,11 +335,16 @@
         }
         
         .instructions ul {
-            padding-left: 20px;
+            display: grid;
+            grid-template-columns: repeat(5, minmax(0, 1fr));
+            gap: 10px;
+            padding-left: 0;
+            list-style-position: inside;
         }
         
         .instructions li {
-            margin-bottom: 5px;
+            margin-bottom: 0;
+            font-size: 0.9em;
         }
         
         footer {
@@ -296,11 +355,11 @@
         }
         
         .status-display {
-            padding: 10px;
+            padding: 10px 12px;
             background-color: #fff3cd;
             border-radius: 6px;
             border: 1px solid #ffeaa7;
-            margin-bottom: 15px;
+            margin-bottom: 0;
         }
         
         .legend {
@@ -326,9 +385,39 @@
             font-size: 0.85em;
         }
         
-        @media (max-width: 1200px) {
+        @media (max-width: 900px) {
             .main-content {
                 flex-direction: column;
+            }
+
+            .left-panel,
+            .right-panel {
+                flex-basis: auto;
+                width: 100%;
+            }
+
+            .instructions ul {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 760px) {
+            .plot-row {
+                flex-direction: column;
+            }
+
+            .canvas-container,
+            .view-control-panel {
+                width: 100%;
+                min-width: 0;
+                max-width: none;
+                flex-basis: auto;
+            }
+
+            .status-row,
+            .info-grid,
+            .instructions ul {
+                grid-template-columns: 1fr;
             }
         }
         
@@ -399,7 +488,7 @@
                 <div class="control-section">
                     <h2>2. 包络线设置</h2>
                     <div class="checkbox-item">
-                        <input type="checkbox" id="autoEnvelope" checked>
+                        <input type="checkbox" id="autoEnvelope">
                         <label for="autoEnvelope">自动计算包络线 (使用C-判别式法)</label>
                     </div>
                     
@@ -407,12 +496,8 @@
                     <input type="text" id="envelopeInput" placeholder="例如：y^2 = 4x 或 y = 2*sqrt(x)">
                     
                     <div class="button-group">
-                        <button id="calcEnvelopeBtn">计算包络</button>
-                        <button id="clearEnvelopeBtn">清除包络</button>
-                    </div>
-                    <div class="button-group">
-                        <button id="animateBtn">动画演示</button>
-                        <button id="resetViewBtn">重置视图</button>
+                        <button id="calcEnvelopeBtn" type="button">计算包络</button>
+                        <button id="clearEnvelopeBtn" type="button">清除包络</button>
                     </div>
                 </div>
                 
@@ -431,41 +516,57 @@
                     </div>
                 </div>
                 
-                <div class="control-section">
-                    <h2>4. 视图控制</h2>
-                    <div class="checkbox-group">
-                        <div class="checkbox-item">
-                            <input type="checkbox" id="showFamily" checked>
-                            <label for="showFamily">显示曲线族</label>
-                        </div>
-                        <div class="checkbox-item">
-                            <input type="checkbox" id="showEnvelope" checked>
-                            <label for="showEnvelope">显示包络线</label>
-                        </div>
-                        <div class="checkbox-item">
-                            <input type="checkbox" id="showGrid" checked>
-                            <label for="showGrid">显示坐标网格</label>
-                        </div>
-                        <div class="checkbox-item">
-                            <input type="checkbox" id="showTangents" checked>
-                            <label for="showTangents">显示相切关系</label>
-                        </div>
-                    </div>
-                    
-                    <div class="slider-container">
-                        <div class="slider-label">
-                            <span>曲线透明度</span>
-                            <span id="opacityValue" class="slider-value">0.7</span>
-                        </div>
-                        <input type="range" id="opacitySlider" min="0.1" max="1" step="0.1" value="0.7">
-                    </div>
-                    
-                </div>
             </div>
             
             <div class="right-panel">
-                <div class="canvas-container">
-                    <canvas id="mainCanvas" width="800" height="600"></canvas>
+                <div class="plot-row">
+                    <div class="canvas-container">
+                        <canvas id="mainCanvas" width="600" height="450"></canvas>
+                    </div>
+
+                    <div class="control-section view-control-panel">
+                        <h2>4. 视图控制</h2>
+                        <div class="checkbox-group">
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="showFamily" checked>
+                                <label for="showFamily">显示曲线族</label>
+                            </div>
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="showEnvelope" checked>
+                                <label for="showEnvelope">显示包络线</label>
+                            </div>
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="showGrid" checked>
+                                <label for="showGrid">显示坐标网格</label>
+                            </div>
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="showTangents" checked>
+                                <label for="showTangents">显示相切关系</label>
+                            </div>
+                        </div>
+
+                        <div class="slider-container">
+                            <div class="slider-label">
+                                <span>曲线透明度</span>
+                                <span id="opacityValue" class="slider-value">0.7</span>
+                            </div>
+                            <input type="range" id="opacitySlider" min="0.1" max="1" step="0.1" value="0.7">
+                        </div>
+                        <div class="button-group view-actions">
+                            <button id="animateBtn" type="button">动画演示</button>
+                            <button id="resetViewBtn" type="button">重置视图</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="status-row">
+                    <div class="interactive-info" id="interactiveInfo">
+                        <strong>交互信息：</strong> 将鼠标移动到画布上探索相切关系
+                    </div>
+                    
+                    <div class="status-display" id="statusDisplay">
+                        <strong>当前状态：</strong> 就绪
+                    </div>
                 </div>
                 
                 <div class="info-panel">
@@ -476,7 +577,7 @@
                         </div>
                         <div class="info-item">
                             <h3>包络线方程</h3>
-                            <p id="currentEnvelope">y = 0</p>
+                            <p id="currentEnvelope">未设置</p>
                         </div>
                         <div class="info-item">
                             <h3>鼠标位置 (x, y)</h3>
@@ -486,16 +587,7 @@
                             <h3>参数C范围</h3>
                             <p id="cRange">[-3, 3]</p>
                         </div>
-                    </div>
-                    
-                    <div class="interactive-info" id="interactiveInfo">
-                        <strong>交互信息：</strong> 将鼠标移动到画布上探索相切关系
-                    </div>
-                    
-                    <div class="status-display" id="statusDisplay">
-                        <strong>当前状态：</strong> 就绪
-                    </div>
-                    
+                    </div>                                        
                     <div class="equation-display">
                         <h3 style="margin-bottom: 10px; color: #2c3e50;">C-判别式法求包络：</h3>
                         <p>1. 曲线族方程: Φ(x, y, C) = 0</p>
@@ -523,19 +615,20 @@
                     </div>
                 </div>
                 
-                <div class="instructions">
-                    <h3>使用说明</h3>
-                    <ul>
-                        <li><strong>探索曲线族</strong>：在左侧输入曲线族方程，设置参数C的范围和数量。</li>
-                        <li><strong>寻找包络</strong>：勾选"自动计算包络线"，工具将尝试用C-判别式法计算包络方程。</li>
-                        <li><strong>交互探索</strong>：将鼠标移动到画布上，查看当前点是否在包络线上，并观察相切关系。</li>
-                        <li><strong>动画演示</strong>：点击"动画演示"按钮，观察参数C变化时曲线族如何"扫过"区域形成包络。</li>
-                        <li><strong>教学重点</strong>：理解奇解作为曲线族的包络，掌握C-判别式法的几何意义。</li>
-                    </ul>
-                </div>
             </div>
         </div>
         
+        <div class="instructions">
+            <h3>使用说明</h3>
+            <ul>
+                <li><strong>探索曲线族</strong>：在左侧输入曲线族方程，设置参数C的范围和数量。</li>
+                <li><strong>寻找包络</strong>：勾选"自动计算包络线"，工具将尝试用C-判别式法计算包络方程。</li>
+                <li><strong>交互探索</strong>：将鼠标移动到画布上，查看当前点是否在包络线上，并观察相切关系。</li>
+                <li><strong>动画演示</strong>：点击"动画演示"按钮，观察参数C变化时曲线族如何"扫过"区域形成包络。</li>
+                <li><strong>教学重点</strong>：理解奇解作为曲线族的包络，掌握C-判别式法的几何意义。</li>
+            </ul>
+        </div>
+
         <footer>
             <p>奇解与包络几何探索器 | 《常微分方程》教学辅助工具 | 基于 HTML5 Canvas 与 JavaScript 实现</p>
         </footer>
@@ -551,9 +644,11 @@ if (sessionStorage.getItem("allow") !== "ok") {
         const AppState = {
             // 曲线族和包络方程
             familyExpr: null,
+            familyYFunc: null,
             envelopeExpr: null,
             envelopeFuncs: [],
             envelopeEquations: [],
+            suspendRedraw: false,
             
             // 参数范围
             cMin: -3,
@@ -727,29 +822,67 @@ if (sessionStorage.getItem("allow") !== "ok") {
             return `(${left}) - (${right})`;
         }
 
+        function createExplicitYFunction(expr) {
+            const equalIndex = expr.indexOf('=');
+            if (equalIndex === -1) {
+                return null;
+            }
+
+            const left = expr.slice(0, equalIndex).trim();
+            const right = expr.slice(equalIndex + 1).trim();
+            if (left !== 'y' || !right) {
+                return null;
+            }
+
+            return createFunctionFromExpression(right.replace(/\bC(?=x\b)/g, 'C*'), ['x', 'C']);
+        }
+
+        function compileExpression(expr) {
+            const normalized = normalizeFamilyExpression(expr);
+
+            if (window.math && typeof window.math.compile === 'function') {
+                const compiled = window.math.compile(normalized);
+                return (scope) => compiled.evaluate(scope);
+            }
+
+            let jsExpr = normalized
+                .replace(/\bC(?=x\b)/g, 'C*')
+                .replace(/\^/g, '**')
+                .replace(/\b(sin|cos|tan|sqrt|abs|exp|log|asin|acos|atan|floor|ceil|round)\s*\(/g, 'Math.$1(')
+                .replace(/\bpi\b/gi, 'Math.PI')
+                .replace(/\be\b/g, 'Math.E');
+
+            if (!/^[0-9+\-*/().,\sxyCMathPIEabcdefghijklmnopqrstuvwxyz_]*$/.test(jsExpr)) {
+                throw new Error('Unsupported expression characters');
+            }
+
+            const evaluator = new Function('x', 'y', 'C', `"use strict"; return (${jsExpr});`);
+            return (scope) => evaluator(scope.x, scope.y, scope.C);
+        }
+
+
         // 核心函数：安全地解析和计算数学表达式
         function createFunctionFromExpression(expr, vars) {
             try {
-                const compiled = math.compile(normalizeFamilyExpression(expr));
+                const evaluateExpression = compileExpression(expr);
                 return function(...args) {
                     try {
                         const scope = {};
                         vars.forEach((v, i) => {
                             scope[v] = args[i];
                         });
-                        return compiled.evaluate(scope);
+                        return evaluateExpression(scope);
                     } catch (err) {
                         return NaN;
                     }
                 };
             } catch (err) {
-                console.error("表达式解析失败:", err.message);
-                alert(`表达式解析错误：${err.message}。请检查数学表达式。`);
+                console.error("Expression parse failed", err.message);
+                alert(`Expression parse error: ${err.message}. Please check the expression.`);
                 return () => NaN;
             }
         }
 
-        // 坐标转换函数
         function logicalToCanvas(lx, ly) {
             const centerX = canvas.width / 2;
             const centerY = canvas.height / 2;
@@ -871,10 +1004,15 @@ if (sessionStorage.getItem("allow") !== "ok") {
         // 求解方程 f(x, y, C) = 0 对于给定的x和C
         function solveForY(x, C) {
             if (!AppState.familyExpr) return [];
+
+            if (AppState.familyYFunc) {
+                const y = AppState.familyYFunc(x, C);
+                return Number.isFinite(y) ? [y] : [];
+            }
             
             const f = AppState.familyExpr;
             const tolerance = 1e-6;
-            const maxIterations = 100;
+            const maxIterations = 40;
             
             // 尝试用牛顿法求解
             const newtonSolve = (y0) => {
@@ -899,7 +1037,7 @@ if (sessionStorage.getItem("allow") !== "ok") {
             };
             
             // 在y范围内尝试多个初始值
-            const yStep = (AppState.yMax - AppState.yMin) / 20;
+            const yStep = (AppState.yMax - AppState.yMin) / 12;
             const solutions = new Set();
             
             for (let y0 = AppState.yMin; y0 <= AppState.yMax; y0 += yStep) {
@@ -1114,6 +1252,21 @@ if (sessionStorage.getItem("allow") !== "ok") {
             drawHighlightedCurve();
             drawTangents();
         }
+
+        function resizeCanvasToContainer() {
+            const container = canvas.parentElement;
+            if (!container) return;
+
+            const style = window.getComputedStyle(container);
+            const horizontalPadding = parseFloat(style.paddingLeft) + parseFloat(style.paddingRight);
+            const availableWidth = Math.min(780, Math.max(560, Math.floor(container.clientWidth - horizontalPadding)));
+            const nextHeight = Math.round(availableWidth * 0.75);
+
+            if (canvas.width !== availableWidth || canvas.height !== nextHeight) {
+                canvas.width = availableWidth;
+                canvas.height = nextHeight;
+            }
+        }
         
         // 自动计算包络线
         function calculateEnvelope() {
@@ -1279,8 +1432,9 @@ if (sessionStorage.getItem("allow") !== "ok") {
             const expr = familyInput.value.trim();
             try {
                 AppState.familyExpr = createFunctionFromExpression(expr, ['x', 'y', 'C']);
+                AppState.familyYFunc = createExplicitYFunction(expr);
                 currentFamilySpan.textContent = `Φ(x, y, C) = ${expr}`;
-                redrawAll();
+                if (!AppState.suspendRedraw) redrawAll();
             } catch (err) {
                 alert("曲线族方程解析错误：" + err.message);
             }
@@ -1290,7 +1444,7 @@ if (sessionStorage.getItem("allow") !== "ok") {
             AppState.cMin = parseFloat(cminInput.value);
             AppState.cMax = parseFloat(cmaxInput.value);
             cRangeSpan.textContent = `[${AppState.cMin.toFixed(1)}, ${AppState.cMax.toFixed(1)}]`;
-            redrawAll();
+            if (!AppState.suspendRedraw) redrawAll();
         }
         
         function updatePlotRange() {
@@ -1298,7 +1452,7 @@ if (sessionStorage.getItem("allow") !== "ok") {
             AppState.xMax = parseFloat(xmaxInput.value);
             AppState.yMin = parseFloat(yminInput.value);
             AppState.yMax = parseFloat(ymaxInput.value);
-            redrawAll();
+            if (!AppState.suspendRedraw) redrawAll();
         }
         
         // ========== 完全重写的动画控制系统 ==========
@@ -1426,13 +1580,32 @@ if (sessionStorage.getItem("allow") !== "ok") {
         }
         
         function resetView() {
+            if (animationController.isAnimating) {
+                animationController.stop();
+            }
+
+            const example = AppState.examples[exampleSelect.value];
+            if (example) {
+                xminInput.value = example.xMin;
+                xmaxInput.value = example.xMax;
+                yminInput.value = example.yMin;
+                ymaxInput.value = example.yMax;
+            }
+
             AppState.viewOffsetX = 0;
             AppState.viewOffsetY = 0;
             AppState.viewScale = 1;
+            AppState.hoveredC = null;
+            AppState.hoveredPoint = null;
+            AppState.isOnEnvelope = false;
+
+            resizeCanvasToContainer();
+            updatePlotRange();
             redrawAll();
             
             // 更新状态显示
             statusDisplay.innerHTML = `<strong>当前状态：</strong> 视图已重置`;
+            interactiveInfo.innerHTML = `<strong>交互信息：</strong> 已恢复默认坐标视图`;
         }
 
         // 事件监听
@@ -1655,6 +1828,9 @@ if (sessionStorage.getItem("allow") !== "ok") {
 
         // 初始化
         function init() {
+            resizeCanvasToContainer();
+            AppState.suspendRedraw = true;
+
             // 设置初始值
             curveCountValue.textContent = curveCountSlider.value;
             opacityValue.textContent = opacitySlider.value;
@@ -1668,12 +1844,18 @@ if (sessionStorage.getItem("allow") !== "ok") {
             // 设置初始显示
             updateCRange();
             updatePlotRange();
+            AppState.suspendRedraw = false;
+            redrawAll();
             
             statusDisplay.innerHTML = `<strong>当前状态：</strong> 就绪`;
         }
         
         // 启动应用
         window.onload = init;
+        window.addEventListener('resize', () => {
+            resizeCanvasToContainer();
+            redrawAll();
+        });
         
         // 确保页面卸载时停止动画
         window.addEventListener('beforeunload', () => {
