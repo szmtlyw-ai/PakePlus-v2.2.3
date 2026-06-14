@@ -805,8 +805,24 @@ if (sessionStorage.getItem("allow") !== "ok") {
             point: '#9b59b6'
         };
 
+        function normalizeMathInput(expr) {
+            return expr
+                .replace(/\\sin/g, 'sin')
+                .replace(/\\cos/g, 'cos')
+                .replace(/\\tan/g, 'tan')
+                .replace(/\\sqrt/g, 'sqrt')
+                .replace(/\\frac\s*\{([^{}]+)\}\s*\{([^{}]+)\}/g, '($1)/($2)')
+                .replace(/[，。；]/g, ',')
+                .replace(/\bc\b/g, 'C')
+                .replace(/\bC(?=x\b)/g, 'C*')
+                .replace(/\bx(?=C\b)/g, 'x*')
+                .replace(/(\d|\)|x|y|C)(?=(sin|cos|tan|sqrt|abs|exp|log|asin|acos|atan)\b)/g, '$1*')
+                .replace(/(\d|\))(?=(x|y|C)\b)/g, '$1*')
+                .replace(/(x|y|C|\d|\))(?=\()/g, '$1*');
+        }
+
         function normalizeFamilyExpression(expr) {
-            expr = expr.replace(/\bC(?=x\b)/g, 'C*');
+            expr = normalizeMathInput(expr);
 
             const equalIndex = expr.indexOf('=');
             if (equalIndex === -1) {
@@ -823,12 +839,13 @@ if (sessionStorage.getItem("allow") !== "ok") {
         }
 
         function createExplicitYFunction(expr) {
+            expr = normalizeMathInput(expr);
             const equalIndex = expr.indexOf('=');
             if (equalIndex === -1) {
                 return null;
             }
 
-            const left = expr.slice(0, equalIndex).trim();
+            const left = expr.slice(0, equalIndex).trim().toLowerCase();
             const right = expr.slice(equalIndex + 1).trim();
             if (left !== 'y' || !right) {
                 return null;
@@ -862,7 +879,7 @@ if (sessionStorage.getItem("allow") !== "ok") {
 
 
         // 核心函数：安全地解析和计算数学表达式
-        function createFunctionFromExpression(expr, vars) {
+        function createFunctionFromExpression(expr, vars, silent = false) {
             try {
                 const evaluateExpression = compileExpression(expr);
                 return function(...args) {
@@ -878,9 +895,69 @@ if (sessionStorage.getItem("allow") !== "ok") {
                 };
             } catch (err) {
                 console.error("Expression parse failed", err.message);
-                alert(`Expression parse error: ${err.message}. Please check the expression.`);
+                if (!silent) {
+                    alert(`Expression parse error: ${err.message}. Please check the expression.`);
+                }
                 return () => NaN;
             }
+        }
+
+        function isLikelyCompleteExpression(expr) {
+            const text = expr.trim();
+            if (!text || /[+\-*/^=(,]$/.test(text)) {
+                return false;
+            }
+
+            let depth = 0;
+            for (const ch of text) {
+                if (ch === '(') depth++;
+                if (ch === ')') depth--;
+                if (depth < 0) return false;
+            }
+
+            return depth === 0;
+        }
+
+
+        function hasChineseInputChars(expr) {
+            return /[\u4e00-\u9fff\u3000-\u303f\uff00-\uffef]/.test(expr);
+        }
+
+        function validateFamilyExpressionInput(expr) {
+            const raw = expr.trim();
+            if (!raw) {
+                return { ok: false, message: '\u8bf7\u8f93\u5165\u66f2\u7ebf\u65cf\u65b9\u7a0b\uff0c\u4f8b\u5982\uff1ay=(x+C)^3' };
+            }
+
+            if (hasChineseInputChars(raw)) {
+                return { ok: false, message: '\u68c0\u6d4b\u5230\u4e2d\u6587\u5b57\u7b26\u6216\u4e2d\u6587\u6807\u70b9\uff0c\u8bf7\u5207\u6362\u4e3a\u82f1\u6587\u8f93\u5165\u6cd5\u540e\u91cd\u65b0\u8f93\u5165\u516c\u5f0f\u3002' };
+            }
+
+            if ((raw.match(/=/g) || []).length > 1) {
+                return { ok: false, message: '\u516c\u5f0f\u4e2d\u53ea\u80fd\u6709\u4e00\u4e2a\u7b49\u53f7\uff0c\u4f8b\u5982\uff1ay=sin(x+C)\u3002' };
+            }
+
+            if (!isLikelyCompleteExpression(raw)) {
+                return { ok: false, message: '\u516c\u5f0f\u8fd8\u4e0d\u5b8c\u6574\uff0c\u8bf7\u68c0\u67e5\u62ec\u53f7\u3001\u7b49\u53f7\u548c\u8fd0\u7b97\u7b26\u662f\u5426\u8f93\u5165\u5b8c\u6574\u3002' };
+            }
+
+            const normalized = normalizeFamilyExpression(raw);
+            const unsupported = normalized.replace(/\b(sin|cos|tan|sqrt|abs|exp|log|asin|acos|atan|floor|ceil|round|Math|PI|E)\b/g, '');
+            if (/[^0-9+\-*/^=().,\sxyC]/.test(unsupported)) {
+                return { ok: false, message: '\u516c\u5f0f\u4e2d\u5305\u542b\u6682\u4e0d\u652f\u6301\u7684\u7b26\u53f7\u6216\u51fd\u6570\u3002\u8bf7\u4f7f\u7528 x\u3001y\u3001C\u3001\u6570\u5b57\u3001\u82f1\u6587\u62ec\u53f7\u548c sin/cos/sqrt \u7b49\u82f1\u6587\u51fd\u6570\u3002' };
+            }
+
+            if (!/[y]/.test(normalized)) {
+                return { ok: false, message: '\u66f2\u7ebf\u65cf\u65b9\u7a0b\u4e2d\u5e94\u5305\u542b y\uff0c\u4f8b\u5982\uff1ay=(x+C)^3\u3002' };
+            }
+
+            const testFunc = createFunctionFromExpression(raw, ['x', 'y', 'C'], true);
+            const value = testFunc(1, 1, 1);
+            if (!Number.isFinite(value)) {
+                return { ok: false, message: '\u516c\u5f0f\u6682\u65f6\u65e0\u6cd5\u8ba1\u7b97\uff0c\u8bf7\u68c0\u67e5\u9664\u6570\u3001\u51fd\u6570\u540d\u548c\u62ec\u53f7\u662f\u5426\u6b63\u786e\u3002' };
+            }
+
+            return { ok: true };
         }
 
         function logicalToCanvas(lx, ly) {
@@ -1066,10 +1143,13 @@ if (sessionStorage.getItem("allow") !== "ok") {
             ctx.save();
             ctx.globalAlpha = AppState.curveOpacity;
             
-            const cStep = (AppState.cMax - AppState.cMin) / (AppState.curveCount - 1);
+            const currentExpr = familyInput.value.trim();
+            const hasParameterC = /(^|[^a-zA-Z])C([^a-zA-Z]|$)/.test(normalizeMathInput(currentExpr));
+            const curveTotal = hasParameterC ? AppState.curveCount : 1;
+            const cStep = curveTotal > 1 ? (AppState.cMax - AppState.cMin) / (curveTotal - 1) : 0;
             
-            for (let i = 0; i < AppState.curveCount; i++) {
-                const C = AppState.cMin + i * cStep;
+            for (let i = 0; i < curveTotal; i++) {
+                const C = hasParameterC ? AppState.cMin + i * cStep : 0;
                 
                 const points = [];
                 const xStep = (AppState.xMax - AppState.xMin) / 200;
@@ -1384,6 +1464,11 @@ if (sessionStorage.getItem("allow") !== "ok") {
         // 查找鼠标位置对应的C值
         function findCForPoint(x, y) {
             if (!AppState.familyExpr) return null;
+
+            if (!/(^|[^a-zA-Z])C([^a-zA-Z]|$)/.test(normalizeMathInput(familyInput.value.trim()))) {
+                const yValues = solveForY(x, 0);
+                return yValues.some(value => Math.abs(value - y) < 0.1) ? 0 : null;
+            }
             
             const f = AppState.familyExpr;
             const cStep = (AppState.cMax - AppState.cMin) / 1000;
@@ -1609,13 +1694,40 @@ if (sessionStorage.getItem("allow") !== "ok") {
         }
 
         // 事件监听
-        familyInput.addEventListener('change', () => {
+        function showFormulaInputMessage(message) {
+            statusDisplay.innerHTML = `<strong>\u5f53\u524d\u72b6\u6001\uff1a</strong> \u516c\u5f0f\u8f93\u5165\u6709\u8bef`;
+            interactiveInfo.innerHTML = `<strong>\u8f93\u5165\u63d0\u793a\uff1a</strong> ${message}`;
+            alert(message);
+        }
+
+
+        function applyFamilyInput() {
+            const validation = validateFamilyExpressionInput(familyInput.value);
+            if (!validation.ok) {
+                showFormulaInputMessage(validation.message);
+                return;
+            }
+
             updateFamily();
             if (autoEnvelopeCheck.checked) {
                 calculateEnvelope();
             }
+            const hasParameterC = /(^|[^a-zA-Z])C([^a-zA-Z]|$)/.test(normalizeMathInput(familyInput.value.trim()));
+            statusDisplay.innerHTML = hasParameterC
+                ? `<strong>\u5f53\u524d\u72b6\u6001\uff1a</strong> \u5df2\u6839\u636e\u8f93\u5165\u516c\u5f0f\u66f4\u65b0\u66f2\u7ebf\u65cf`
+                : `<strong>\u5f53\u524d\u72b6\u6001\uff1a</strong> \u5df2\u6839\u636e\u8f93\u5165\u516c\u5f0f\u7ed8\u5236\u666e\u901a\u51fd\u6570\u56fe\u50cf`;
+        }
+
+        familyInput.addEventListener('change', applyFamilyInput);
+
+        familyInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                applyFamilyInput();
+                familyInput.blur();
+            }
         });
-        
+
         exampleSelect.addEventListener('change', () => {
             const example = AppState.examples[exampleSelect.value];
             if (example) {
