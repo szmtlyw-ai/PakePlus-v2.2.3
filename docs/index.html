@@ -3,582 +3,223 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>九章算术：古人直除法解方程组（趣味动画版）</title>
+    <title>密码登录 - 常微分方程智能可视化教学助手</title>
     <style>
-        :root {
-            --bg-color: #f3ebd8;
-            --text-color: #2c2825;
-            --red-color: #c9372c;
-            --green-color: #2e7a3c;
-            --blue-color: #2978d8;
-            --orange-color: #f27c22;
-            --highlight: #e8c678;
-            --panel-bg: #fff9e6;
-            --border-color: #b8a68b;
-            --tooltip-bg: #222;
-            --tooltip-text: #fff;
+        *{
+            margin:0;
+            padding:0;
+            box-sizing:border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', '微软雅黑', sans-serif;
         }
-        [data-theme="dark"] {
-            --bg-color: #201e1b;
-            --text-color: #eee;
-            --panel-bg: #2d2a24;
-            --border-color: #666;
+        body{
+            background: linear-gradient(135deg, #F8FAFC 0%, #EFF6FF 100%);
+            color:#334155;
+            display:grid;
+            place-items:center;
+            height:100vh;
+            text-align: center;
         }
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-        body {
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            font-family: 'KaiTi', 'STKaiti', '楷体', serif;
+        .container{
+            width: 100%;
+            max-width: 580px;
             padding: 20px;
-            min-height: 100vh;
-            transition: background 0.4s, color 0.4s;
-            background-image: url('data:image/svg+xml;utf8,<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"><filter id="noiseFilter"><feTurbulence type="fractalNoise" baseFrequency="0.65" numOctaves="3" stitchTiles="stitch"/></filter><rect width="100%" height="100%" filter="url(%23noiseFilter)" opacity="0.05"/></svg>');
         }
-        .container {
-            max-width: 1100px;
-            margin: 0 auto;
-            background: rgba(255, 255, 255, 0.08);
-            border: 2px solid var(--border-color);
-            border-radius: 12px;
-            padding: 36px;
+        .title{
+            font-size: 26px;
+            font-weight: 600;
+            margin-bottom: 10px;
+            letter-spacing: 1px;
+            color: #4A90E2;
         }
-        h1 {
-            text-align: center;
-            font-size: 2.2rem;
-            letter-spacing: 2px;
-            margin-bottom: 6px;
+        .subtitle{
+            font-size: 16px;
+            color: #64748B;
+            margin-bottom: 40px;
+            line-height: 1.6;
         }
-        .subtitle {
-            text-align: center;
-            font-size: 1.1rem;
-            opacity: 0.75;
+        .login-box{
+            background:white;
+            padding: 50px 40px;
+            border-radius: 20px;
+            box-shadow: 0 8px 24px rgba(74, 144, 226, 0.07);
+            border: 1px solid #E2E8F0;
+        }
+        .login-box h2{
+            color:#4A90E2;
             margin-bottom: 30px;
+            font-size: 22px;
+            font-weight: 600;
         }
-        .top-ctrl {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-            gap: 12px;
-        }
-        .presentation-area {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 30px;
-            margin: 40px 0;
-            flex-wrap: wrap;
-        }
-        .matrix-box {
-            display: flex;
-            gap: 22px;
-            align-items: center;
-            font-size: 2rem;
-            font-family: Arial, sans-serif;
-            position: relative;
-        }
-        /* 运算算式趣味样式 */
-        .calc-formula {
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-            min-width: 160px;
-            text-align: center;
-            font-size: 1.1rem;
-        }
-        .calc-formula div {
-            padding: 4px 8px;
-            border-radius: 8px;
-            transition: all 0.3s ease;
-            opacity: 0;
-            transform: translateX(-20px);
-        }
-        .calc-formula div.show {
-            opacity: 1;
-            transform: translateX(0);
-        }
-        .calc-formula div.mul {
-            background: rgba(242, 124, 34, 0.15);
-            border: 1px dashed var(--orange-color);
-            color: var(--orange-color);
-        }
-        .calc-formula div.sub {
-            background: rgba(41, 120, 216, 0.15);
-            border: 1px dashed var(--blue-color);
-            color: var(--blue-color);
-        }
-        .calc-formula div.active {
-            background: var(--highlight);
-            transform: scale(1.08);
-            font-weight: bold;
-        }
-        .column {
-            display: flex;
-            flex-direction: column;
-            justify-content: space-around;
-            height: 190px;
-            padding: 10px 14px;
-            background: rgba(255,255,255,0.15);
-            position: relative;
-        }
-        .column.red { border: 3px solid var(--red-color); }
-        .column.green { border: 3px solid var(--green-color); }
-        .cell {
-            width: 70px;
-            height: 45px;
-            display: grid;
-            place-items: center;
-            cursor: pointer;
-            border-radius: 6px;
-            position: relative;
-            transition: all 0.2s;
-            opacity: 0.7;
-        }
-        .cell.show {
-            opacity: 1;
-        }
-        .cell:hover {
-            background: rgba(232, 198, 120, 0.35);
-            transform: scale(1.05);
-        }
-        /* 遍乘跳动动画 */
-        .cell.mul-animate {
-            animation: jumpMul 0.6s ease;
-        }
-        @keyframes jumpMul {
-            0% { transform: translateY(0); }
-            50% { transform: translateY(-12px) scale(1.1); background: rgba(242, 124, 34, 0.3); }
-            100% { transform: translateY(0); }
-        }
-        /* 直除归零闪光动画 */
-        .cell.sub-animate {
-            animation: flashSub 0.7s ease;
-        }
-        @keyframes flashSub {
-            0% { transform: scale(1); }
-            30% { transform: scale(1.15); background: rgba(41, 120, 216, 0.35); }
-            60% { opacity: 0.3; }
-            100% { opacity: 1; transform: scale(1); }
-        }
-        /* 粒子光点特效 */
-        .particle {
-            position: absolute;
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            pointer-events: none;
-            animation: particleFly 0.8s ease-out forwards;
-        }
-        @keyframes particleFly {
-            0% { opacity: 1; transform: scale(1); }
-            100% { opacity: 0; transform: scale(0) translateY(-40px); }
-        }
-        /* 悬浮提示框 */
-        .cell:hover::after {
-            content: attr(data-tip);
-            position: absolute;
-            bottom: 110%;
-            left: 50%;
-            transform: translateX(-50%);
-            background: var(--tooltip-bg);
-            color: var(--tooltip-text);
-            padding: 6px 10px;
-            font-size: 14px;
-            width: max-content;
-            border-radius: 4px;
-            z-index: 99;
-            pointer-events: none;
-        }
-        .equation-box {
-            display: flex;
-            align-items: center;
-            font-size: 1.7rem;
-            font-family: "Times New Roman", serif;
-        }
-        .brace {
-            font-size: 4.5rem;
-            opacity: 0.7;
-            margin-right: 12px;
-        }
-        .eq-lines {
-            display: flex;
-            flex-direction: column;
-            gap: 18px;
-        }
-        .explanation {
-            background: var(--panel-bg);
-            border-left: 6px solid var(--red-color);
-            padding: 20px;
-            border-radius: 6px;
-            font-size: 1.2rem;
-            line-height: 1.65;
-            margin-bottom: 24px;
-        }
-        .step-title {
-            font-weight: bold;
-            color: var(--red-color);
-            font-size: 1.4rem;
-            margin-right: 10px;
-        }
-        .detail-panel {
-            margin: 12px 0;
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
-            overflow: hidden;
-        }
-        .detail-header {
-            padding: 10px 16px;
-            background: rgba(0,0,0,0.06);
-            cursor: pointer;
-            display: flex;
-            justify-content: space-between;
-        }
-        .detail-content {
-            padding: 0 16px;
-            max-height: 0;
-            overflow: hidden;
-            transition: max-height 0.3s ease;
-        }
-        .detail-content.open {
-            padding: 14px 16px;
-            max-height: 300px;
-        }
-        .controls {
-            display: flex;
-            justify-content: center;
-            gap: 14px;
-            flex-wrap: wrap;
-            margin-top: 30px;
-        }
-        button {
-            padding: 10px 20px;
-            font-size: 1rem;
-            font-family: inherit;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
+        input{
+            width:100%;
+            padding:16px;
+            margin:10px 0;
+            border:1px solid #E2E8F0;
+            border-radius:10px;
+            font-size:16px;
+            background: #FAFCFF;
             transition: 0.2s;
         }
-        .btn-main {
-            background: var(--text-color);
-            color: var(--bg-color);
+        input:focus{
+            border-color: #4A90E2;
+            outline: none;
+            box-shadow: 0 0 0 4px rgba(74, 144, 226, 0.08);
         }
-        .btn-light {
-            background: transparent;
-            border: 1px solid var(--text-color);
-            color: var(--text-color);
+        button{
+            width:100%;
+            padding:16px;
+            background:#4A90E2;
+            color:white;
+            border:none;
+            border-radius:10px;
+            font-size:16px;
+            margin-top:10px;
+            cursor:pointer;
+            transition: 0.2s;
+            font-weight: 500;
+            box-shadow: 0 4px 12px rgba(74, 144, 226, 0.15);
         }
-        button:disabled {
-            opacity: 0.4;
-            cursor: not-allowed;
+        button:hover{
+            background:#3B82D1;
+            transform: translateY(-1px);
+            box-shadow: 0 6px 16px rgba(74, 144, 226, 0.18);
         }
-        .fraction {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            font-size: 1.1rem;
+        .tip{
+            color: #F87171;
+            margin-top:15px;
+            display:none;
+            font-size: 14px;
         }
-        .fraction span:first-child { border-bottom: 2px solid currentColor; padding-bottom: 2px; }
-        .fraction span:last-child { padding-top: 2px; }
-        .speed-wrap {
-            display: flex;
-            align-items: center;
-            gap: 10px;
+        .tip.success {
+            color: #10B981;
         }
-        /* 运算分类标签 */
-        .tag-mul { color: var(--orange-color); font-weight: bold; }
-        .tag-sub { color: var(--blue-color); font-weight: bold; }
+        .copyright{
+            margin-top: 30px;
+            font-size: 12px;
+            color: #94A3B8;
+        }
     </style>
 </head>
 <body>
-<div class="container">
-    <h1>《九章算术》方程术·直除法趣味交互演示</h1>
-    <div class="subtitle">遍乘跳动动画 + 直除归零闪光 + 粒子特效，课堂生动讲解</div>
 
-    <div class="top-ctrl">
-        <div class="speed-wrap">
-            <span>自动播放速度：</span>
-            <select id="speedSelect">
-                <option value="3000">慢速 3秒/步</option>
-                <option value="2000" selected>中速 2秒/步</option>
-                <option value="1000">快速 1秒/步</option>
-            </select>
+    <div class="container">
+        <h1 class="title">🧮 常微分方程 | 智能可视化教学助手</h1>
+        <p class="subtitle">
+            原创AI教学工具 · 课堂教学与自主学习专用<br>
+            西北师范大学数学与统计学院 ·  设计开发
+        </p>
+
+        <div class="login-box">
+            <h2>平台密码验证</h2>
+            <input type="password" id="pwd" placeholder="请输入访问密码">
+            <button onClick="check()">登录进入教学平台</button>
+            <div class="tip" id="err">密码错误，请重新输入！</div>
+            <div class="tip success" id="success" style="display: none;">验证成功，正在跳转...</div>
         </div>
-        <div>
-            <button class="btn-light" id="themeBtn">切换明暗主题</button>
-        </div>
+
+        <div class="copyright">© 2025 版权所有 · 盗版必究</div>
     </div>
 
-    <div class="explanation" id="explanationBox"></div>
-
-    <div class="detail-panel">
-        <div class="detail-header" id="detailToggle">
-            <span>查看本步古法原理详解</span>
-            <span>▼</span>
-        </div>
-        <div class="detail-content" id="detailContent"></div>
-    </div>
-
-    <div class="presentation-area">
-        <div class="matrix-box" id="matrixWrap">
-            <div class="column red" id="colLeft">
-                <div class="cell" data-index="0" data-tip="左列第一行：x系数" id="L0"></div>
-                <div class="cell" data-index="1" data-tip="左列第二行：y系数" id="L1"></div>
-                <div class="cell" data-index="2" data-tip="左列第三行：常数项" id="L2"></div>
-            </div>
-            <div class="calc-formula" id="calcFormula"></div>
-            <div class="column green" id="colRight">
-                <div class="cell" data-index="0" data-tip="右列第一行：x系数" id="R0"></div>
-                <div class="cell" data-index="1" data-tip="右列第二行：y系数" id="R1"></div>
-                <div class="cell" data-index="2" data-tip="右列第三行：常数项" id="R2"></div>
-            </div>
-        </div>
-        <span style="font-size:2rem">➡</span>
-        <div class="equation-box">
-            <div class="brace">{</div>
-            <div class="eq-lines">
-                <div id="eq1"></div>
-                <div id="eq2"></div>
-            </div>
-        </div>
-    </div>
-
-    <div class="controls">
-        <button class="btn-main" id="resetBtn">重置初始状态</button>
-        <button class="btn-main" id="btnPrev" onclick="changeStep(-1)" disabled>上一步（←）</button>
-        <button class="btn-main" id="btnNext" onclick="changeStep(1)">下一步（→）</button>
-        <button class="btn-main" id="autoPlayBtn">自动播放</button>
-    </div>
-</div>
-
-<script>
-const stepsData = [
-    {
-        title: "开篇：列算筹",
-        text: "题目：2牛5羊值金8两，5牛2羊值金10两。古人以算筹列方程组，绿列为第一式，红列为第二式。",
-        detail: "古法方程术规则：竖列为一组方程，从上至下依次为x系数、y系数、常数。解题核心两步：<span class='tag-mul'>遍乘</span>、<span class='tag-sub'>直除</span>。",
-        L: ['2', '5', '8'], R: ['5', '2', '10'],
-        eq1: "5x + 2y = 10", eq2: "2x + 5y = 8",
-        formula: ["", "", ""],
-        formulaType: ["empty", "empty", "empty"],
-        tip: ["无计算", "无计算", "无计算"]
-    },
-    {
-        title: "第一步：<span class='tag-mul'>遍乘</span>做运算准备",
-        text: "将红列全部数字 ×5，统一x项系数，为直除做准备，橙色代表遍乘运算。",
-        detail: "<span class='tag-mul'>遍乘</span>：两式首项互乘，让两个方程同一未知数系数相等，方便后续相减计算。",
-        L: ['10', '25', '40'], R: ['5', '2', '10'],
-        eq1: "5x + 2y = 10", eq2: "10x + 25y = 40",
-        formula: ["2×5=10", "5×5=25", "8×5=40"],
-        formulaType: ["mul", "mul", "mul"],
-        tip: ["左列×5", "左列×5", "左列×5"]
-    },
-    {
-        title: "第二步：<span class='tag-sub'>直除</span>令x项归零",
-        text: "红列减去绿列2倍，首行变为0，直接让x项数值归零，蓝色代表直除减法运算。",
-        detail: "<span class='tag-sub'>直除</span>：两列对应数值相减，让其中一类未知数数值归零，只剩单变量方程，是古法核心。",
-        L: ['0', '21', '20'], R: ['5', '2', '10'],
-        eq1: "5x + 2y = 10", eq2: "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;21y = 20",
-        formula: ["10-5×2=0", "25-2×2=21", "40-10×2=20"],
-        formulaType: ["sub", "sub", "sub"],
-        tip: ["相减归零", "相减得21", "相减得20"]
-    },
-    {
-        title: "第三步：再次<span class='tag-mul'>遍乘</span>",
-        text: "绿列全部数字 ×21，统一y项系数，准备令y项归零，橙色遍乘动画。",
-        detail: "x项归零后只剩y，继续遍乘右侧方程，对齐y系数，准备第二次直除计算。",
-        L: ['0', '21', '20'], R: ['105', '42', '210'],
-        eq1: "105x + 42y = 210", eq2: "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;21y = 20",
-        formula: ["", "2×21=42", "10×21=210"],
-        formulaType: ["empty", "mul", "mul"],
-        tip: ["无操作", "右列×21", "右列×21"]
-    },
-    {
-        title: "第四步：再次<span class='tag-sub'>直除</span>令y项归零",
-        text: "绿列减去红列2倍，中间项归零，x、y各自独立，蓝色归零闪光。",
-        detail: "两次遍乘+两次直除后，矩阵对角化，每行仅保留一个未知数，可直接求解。",
-        L: ['0', '21', '20'], R: ['105', '0', '170'],
-        eq1: "105x &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;= 170", eq2: "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;21y = 20",
-        formula: ["5×21=105", "42-21×2=0", "210-20×2=170"],
-        formulaType: ["mul", "sub", "sub"],
-        tip: ["右列×21", "相减归零", "相减得170"]
-    },
-    {
-        title: "最终步：化简求解",
-        text: "各项同除系数化简，得到牛羊单价。",
-        detail: "化简分数：x=170/105=34/21，y=20/21。一牛34/21两，一羊20/21两。",
-        L: ['0', '1', '20/21'], R: ['1', '0', '34/21'],
-        eq1: "x = 34 / 21", eq2: "y = 20 / 21",
-        formula: ["105÷105=1", "21÷21=1", "170÷105=34/21<br>20÷21=20/21"],
-        formulaType: ["empty", "empty", "empty"],
-        tip: ["归一", "归一", "分数化简"]
-    }
-];
-
-let currentStep = 0;
-let autoTimer = null;
-let autoRunning = false;
-
-// 生成粒子光点特效
-function createParticle(targetEl, color) {
-    const rect = targetEl.getBoundingClientRect();
-    const wrap = document.getElementById('matrixWrap');
-    const wrapRect = wrap.getBoundingClientRect();
-    for(let i=0;i<5;i++){
-        const p = document.createElement('div');
-        p.className = 'particle';
-        p.style.background = color;
-        p.style.left = `${rect.left - wrapRect.left + 30 + (i*10)}px`;
-        p.style.top = `${rect.top - wrapRect.top + 20}px`;
-        wrap.appendChild(p);
-        setTimeout(()=>p.remove(), 800);
-    }
-}
-
-// 格式化分数
-function formatNumber(str) {
-    if (str.includes('/')) {
-        const s = str.split('/');
-        return `<div class="fraction"><span>${s[0]}</span><span>${s[1]}</span></div>`;
-    }
-    return str;
-}
-
-// 渲染单步+趣味动画
-function renderStep() {
-    const d = stepsData[currentStep];
-    document.getElementById('explanationBox').innerHTML = `<span class="step-title">${d.title}</span>${d.text}`;
-    document.getElementById('detailContent').innerHTML = d.detail;
-
-    // 重置单元格样式
-    const allCells = document.querySelectorAll('.cell');
-    allCells.forEach(cell=>{
-        cell.classList.remove('mul-animate','sub-animate','show');
-        void cell.offsetWidth;
-    })
-
-    // 更新左列算筹
-    const updateCol = (prefix, arr, opType) => {
-        for(let i=0;i<3;i++){
-            const el = document.getElementById(prefix+i);
-            el.innerHTML = formatNumber(arr[i]);
-            el.dataset.tip = d.tip[i];
-            el.classList.add('show');
-            // 匹配运算播放动画+粒子
-            if(opType[i] === 'mul'){
-                el.classList.add('mul-animate');
-                createParticle(el, '#f27c22');
-            }else if(opType[i] === 'sub'){
-                el.classList.add('sub-animate');
-                createParticle(el, '#2978d8');
+    <script>
+        function getPasswordHash() {
+            return "29624e2e4c4ccee26ed8f3e0ca1012ea57a8f2191be6149f632250f7036119cc";
+        }
+        
+        async function sha256(message) {
+            const msgBuffer = new TextEncoder().encode(message);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        }
+        
+        // 密码验证函数
+        async function verifyPassword(input) {
+            if (!input || input.trim() === '') {
+                return false;
+            }
+            
+            const userHash = await sha256(input);
+            const storedHash = getPasswordHash();
+            return userHash === storedHash;
+        }
+        
+        // 登录检查主函数
+        async function check() {
+            const userInput = document.getElementById('pwd').value.trim();
+            const errorElement = document.getElementById('err');
+            const successElement = document.getElementById('success');
+            
+            // 隐藏之前的提示
+            errorElement.style.display = "none";
+            successElement.style.display = "none";
+            
+            if (!userInput) {
+                errorElement.textContent = "请输入密码";
+                errorElement.style.display = "block";
+                return;
+            }
+            
+            // 显示验证中状态
+            const submitBtn = document.querySelector('button');
+            const originalText = submitBtn.textContent;
+            submitBtn.textContent = "验证中...";
+            submitBtn.disabled = true;
+            
+            try {
+                if (await verifyPassword(userInput)) {
+                    // 密码验证成功
+                    successElement.style.display = "block";
+                    sessionStorage.setItem("allow", "ok");
+                    
+                    // 延迟跳转，让用户看到成功提示
+                    setTimeout(() => {
+                        window.location.href = "platform.html";
+                    }, 500);
+                } else {
+                    // 密码验证失败
+                    errorElement.textContent = "密码错误，请重新输入！";
+                    errorElement.style.display = "block";
+                    submitBtn.textContent = originalText;
+                    submitBtn.disabled = false;
+                    
+                    // 清空密码框
+                    document.getElementById('pwd').value = '';
+                    document.getElementById('pwd').focus();
+                }
+            } catch (error) {
+                // 异常处理
+                errorElement.textContent = "验证失败，请重试";
+                errorElement.style.display = "block";
+                submitBtn.textContent = originalText;
+                submitBtn.disabled = false;
             }
         }
-    }
-    updateCol('L', d.L, d.formulaType);
-    updateCol('R', d.R, d.formulaType);
-
-    // 更新算式，带渐入动画+分类样式
-    const formulaBox = document.getElementById('calcFormula');
-    formulaBox.innerHTML = d.formula.map((v,i)=>{
-        let cls = d.formulaType[i];
-        return `<div data-fidx="${i}" class="${cls} show">${v}</div>`;
-    }).join('');
-
-    // 更新方程组
-    document.getElementById('eq1').innerHTML = d.eq1;
-    document.getElementById('eq2').innerHTML = d.eq2;
-
-    // 按钮状态
-    document.getElementById('btnPrev').disabled = currentStep === 0;
-    const nextBtn = document.getElementById('btnNext');
-    if(currentStep === stepsData.length-1){
-        nextBtn.disabled = true;
-        nextBtn.innerText = "演示结束";
-    }else{
-        nextBtn.disabled = false;
-        nextBtn.innerText = "下一步（→）";
-    }
-}
-
-// 点击单元格高亮对应算式
-document.querySelectorAll('.cell').forEach(cell=>{
-    cell.addEventListener('click', function(){
-        const idx = this.dataset.index;
-        document.querySelectorAll('.calc-formula div').forEach(f=>f.classList.remove('active'));
-        const target = document.querySelector(`.calc-formula div[data-fidx="${idx}"]`);
-        if(target) target.classList.add('active');
-    })
-})
-
-// 切换步骤
-function changeStep(dir) {
-    const newStep = currentStep + dir;
-    if(newStep <0 || newStep >= stepsData.length) return;
-    currentStep = newStep;
-    renderStep();
-}
-
-// 重置
-document.getElementById('resetBtn').onclick = ()=>{
-    stopAuto();
-    currentStep = 0;
-    renderStep();
-}
-
-// 自动播放控制
-const autoBtn = document.getElementById('autoPlayBtn');
-function startAuto() {
-    stopAuto();
-    autoRunning = true;
-    autoBtn.innerText = "暂停播放";
-    const speed = Number(document.getElementById('speedSelect').value);
-    autoTimer = setInterval(()=>{
-        if(currentStep >= stepsData.length-1){
-            stopAuto();
-            return;
-        }
-        changeStep(1);
-    }, speed)
-}
-function stopAuto() {
-    autoRunning = false;
-    autoBtn.innerText = "自动播放";
-    clearInterval(autoTimer);
-}
-autoBtn.onclick = ()=> autoRunning ? stopAuto() : startAuto();
-
-// 速度切换
-document.getElementById('speedSelect').onchange = ()=>{
-    if(autoRunning) startAuto();
-}
-
-// 展开/收起详情
-document.getElementById('detailToggle').onclick = function(){
-    const content = document.getElementById('detailContent');
-    content.classList.toggle('open');
-    this.querySelector('span:last-child').innerText = content.classList.contains('open') ? '▲' : '▼';
-}
-
-// 明暗主题切换
-document.getElementById('themeBtn').onclick = ()=>{
-    const body = document.body;
-    if(body.dataset.theme === 'dark') body.removeAttribute('data-theme');
-    else body.dataset.theme = 'dark';
-}
-
-// 键盘左右快捷键
-window.addEventListener('keydown', e=>{
-    if(e.key === 'ArrowLeft') changeStep(-1);
-    if(e.key === 'ArrowRight') changeStep(1);
-})
-
-// 初始化
-window.onload = renderStep;
-</script>
+        
+        // 获取密码输入框元素
+        const passwordInput = document.getElementById('pwd');
+        
+        // 为密码输入框添加键盘事件监听
+        passwordInput.addEventListener('keydown', async function(event) {
+            if (event.key === 'Enter' || event.keyCode === 13) {
+                event.preventDefault();
+                await check();
+            }
+        });
+        
+        // 为密码输入框添加输入事件监听，当用户开始输入时隐藏错误提示
+        passwordInput.addEventListener('input', function() {
+            document.getElementById('err').style.display = "none";
+        });
+        
+        // 页面加载完成后，自动将焦点设置到密码输入框
+        window.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('pwd').focus();
+            
+            // 如果用户已经登录，直接跳转
+            if (sessionStorage.getItem("allow") === "ok") {
+                window.location.href = "platform.html";
+            }
+        });
+    </script>
 </body>
 </html>
